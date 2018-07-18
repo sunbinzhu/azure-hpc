@@ -522,17 +522,13 @@ install_nodeagent()
     curl -o NodeAgent.tar http://evanc.blob.core.windows.net/linuxnm/NodeAgentPublish.tar
     tar -xf NodeAgent.tar
     [ -f "/opt/appsettings.json" ] && cp /opt/appsettings.json /opt/NodeAgent/
-
-    pkill NodeAgent
-    pkill nodemanager
-
-    cd /opt/NodeAgentPublish
-    ./NodeAgent < /dev/null > /dev/null &
-    disown
-
     cd /opt/hpcnodemanager
-    ./nodemanager > /dev/null &
-    disown
+    curl -o hpcagent https://suzhuhpcshare.blob.core.windows.net/testscripts/hpcagent
+    chmod +xxx hpcagent
+    curl -o hpcagent.sh https://suzhuhpcshare.blob.core.windows.net/testscripts/hpcagent.sh
+    chmod +xxx hpcagent.sh
+    mv hpcagent.sh /etc/init.d/hpcagent
+    chkconfig --add hpcagent
 }
 
 install_pkgs
