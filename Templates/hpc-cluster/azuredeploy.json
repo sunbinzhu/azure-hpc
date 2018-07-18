@@ -289,7 +289,7 @@
       "clusterFilesystemStorageLocation":"[split(parameters('clusterFilesystem'), ':')[1]]",
       "vnetID":"[resourceId('Microsoft.Network/virtualNetworks',variables('networkSettings').virtualNetworkName)]",
       "subnetRef":"[concat(variables('vnetID'),'/subnets/',variables('networkSettings').subnet.dse.name)]",
-      "templateBaseUrl":"https://raw.githubusercontent.com/Azure/azure-hpc/master/Templates/hpc-cluster/",
+      "templateBaseUrl":"https://raw.githubusercontent.com/sunbinzhu/azure-hpc/master/Templates/hpc-cluster/",
       "installationCLI":"[concat('bash azuredeploy.sh ', variables('masterVMName'), ' ', variables('workerVMName'), ' ', parameters('workerNodeCount'), ' ', parameters('hpcUserName'), ' ', variables('templateBaseUrl'), ' ', variables('clusterFilesystem'), ' ', variables('clusterFilesystemStorageLocation'), ' ', variables('imageOffer'), ' ', parameters('scheduler'), ' ', parameters('installEasybuild'))]"
    },
    "resources":[
