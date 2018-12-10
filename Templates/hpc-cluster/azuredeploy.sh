@@ -372,7 +372,7 @@ install_scheduler()
     if [ "$SCHEDULER" == "Slurm" ]; then
         install_munge
         install_slurm
-    elif [ "$SCHEDULER" == "PBSPro-OS" ]; then
+    elif [ "$SCHEDULER" == "PBSPro-OSS" ]; then
         install_pbsoss
     else
         echo "Invalid scheduler specified: $SCHEDULER"
@@ -510,27 +510,6 @@ install_cfs()
     fi
 }
 
-install_nodeagent()
-{
-    yum install -y python-devel libunwind
-    pip install psutil
-
-    cd /opt/
-    curl -o appsettings.json https://gist.githubusercontent.com/EvanCui/ee87daa13907bc42bd049be73a775844/raw/appsettings.json
-    curl -o hpcnodemanager.tar http://evanc.blob.core.windows.net/linuxnm/hpcnodemanager.tar
-    tar -xf hpcnodemanager.tar
-    curl -o NodeAgent.tar http://evanc.blob.core.windows.net/linuxnm/NodeAgentPublish.tar
-    tar -xf NodeAgent.tar
-    [ -f "/opt/appsettings.json" ] && cp /opt/appsettings.json /opt/NodeAgent/
-    cd /opt/hpcnodemanager
-    curl -o hpcagent https://suzhuhpcshare.blob.core.windows.net/testscripts/hpcagent
-    chmod +xxx hpcagent
-    curl -o hpcagent.sh https://suzhuhpcshare.blob.core.windows.net/testscripts/hpcagent.sh
-    chmod +xxx hpcagent.sh
-    mv hpcagent.sh /etc/init.d/hpcagent
-    chkconfig --add hpcagent
-}
-
 install_pkgs
 setup_shares
 setup_hpc_user
@@ -538,6 +517,5 @@ install_cfs
 install_scheduler
 setup_env
 install_easybuild
-install_nodeagent
 shutdown -r +1 &
 exit 0

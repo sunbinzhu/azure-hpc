@@ -1,4 +1,4 @@
-# Deploy a Slurm or PBS OSS HPC Cluster in Azure
+# Deploy a Slurm or PBS OSS HPC Cluster in Azure with ACM service enabled
 
 Deploys a Slurm or PBS OSS cluster with a head node and one or more worker nodes.
 
@@ -15,6 +15,9 @@ Deploys a Slurm or PBS OSS cluster with a head node and one or more worker nodes
 4. Accept the terms and agreements.
 
 5. Click Purchase.
+
+## Accessing the ACM portal 
+At the end of the deployment, check outputs, copy the portalUri variable and put into the browser to access the ACM portal
 
 ## Accessing the cluster
 
