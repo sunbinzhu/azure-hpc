@@ -57,7 +57,7 @@
       }
     },
     "storageAccountName": {
-      "defaultValue": "[uniquestring(resourceGroup().id)]",
+      "defaultValue": "[uniquestring(resourceGroup().id, 'storage')]",
       "type": "string",
       "metadata": {
         "description": "Storage Account Name"
@@ -498,7 +498,7 @@
     "aadAuthIssuer": "[if(empty(parameters('aadAuthApplicationId')), json('null'), concat('https://sts.windows.net/', variables('aadTenantId'), '/'))]",
     "aadAuthClientId": "[if(empty(parameters('aadAuthApplicationId')), json('null'), parameters('aadAuthApplicationId'))]",
     "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
-    "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), uniqueString(resourceGroup().id), parameters('portalDnsNameLabel'))]",
+    "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), uniqueString(resourceGroup().id, 'portal'), tolower(parameters('portalDnsNameLabel')))]",
     "artifactsBaseUrl": "https://raw.githubusercontent.com/sunbinzhu/azure-hpc/master/Templates/hpc-cluster/"
   },
   "resources": [
@@ -530,7 +530,7 @@
     },
     {
       "type": "Microsoft.Web/sites",
-      "name": "[parameters('portalDnsNameLabel')]",
+      "name": "[variables('portalDnsNameLabel')]",
       "apiVersion": "2018-02-01",
       "location": "[parameters('location')]",
       "properties": {
@@ -562,7 +562,7 @@
       "resources": [
         {
           "type": "Microsoft.Web/sites/config",
-          "name": "[concat(parameters('portalDnsNameLabel'), '/authsettings')]",
+          "name": "[concat(variables('portalDnsNameLabel'), '/authsettings')]",
           "apiVersion": "2018-02-01",
           "properties": {
             "enabled": true,
@@ -572,7 +572,7 @@
             "issuer": "[variables('aadAuthIssuer')]"
           },
           "dependsOn": [
-            "[concat('Microsoft.Web/sites/', parameters('portalDnsNameLabel'))]"
+            "[concat('Microsoft.Web/sites/', variables('portalDnsNameLabel'))]"
           ]
         }
       ],
@@ -750,7 +750,7 @@
   "outputs": {
     "portalUri": {
       "type": "string",
-      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', parameters('portalDnsNameLabel'))).properties.defaultHostName, '/')]"
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', variables('portalDnsNameLabel'))).properties.defaultHostName, '/')]"
     }
   }
 }
