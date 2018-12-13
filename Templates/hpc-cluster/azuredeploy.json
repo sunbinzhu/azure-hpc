@@ -1,997 +1,756 @@
-{
-    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0",
-    "parameters": {
-        "scheduler": {
-            "type": "string",
-            "defaultValue": "Slurm",
-            "allowedValues": [
-                "Slurm",
-                "PBSPro-OSS"
-            ],
-            "metadata": {
-                "description": "HPC scheduler to install."
-            }
-        },
-        "adminUserName": {
-            "type": "string",
-            "defaultValue": "azureuser",
-            "metadata": {
-                "description": "User name for the Virtual Machine. Pick a valid username otherwise there will be a BadRequest error."
-            }
-        },
-        "adminPassword": {
-            "type": "securestring",
-            "metadata": {
-                "description": "Admin password. Pick a complex password with uppercase letters, lowercase letters, digits, and symbols. The password should not be longer than 16. Otherwise you'll get a BadRequest error."
-            }
-        },
-        "acmPortalNameLabel": {
-            "type": "string",
-            "metadata": {
-                "description": "The DSN name label. This label should be unique in the deployment location, or leave empty then the deployment process will generate an unique string."
-            },
-            "defaultValue": ""
-        },
-        "hpcUserName": {
-            "type": "string",
-            "defaultValue": "hpc",
-            "metadata": {
-                "description": "User for running HPC applications with shared home directory and SSH public key authentication setup.  This user cannot login from outside the cluster. Pick a valid username otherwise there will be a BadRequest error."
-            }
-        },
-        "image": {
-            "type": "string",
-            "defaultValue": "OpenLogic:CentOS-HPC:7.3",
-            "allowedValues": [
-                "OpenLogic:CentOS-HPC:7.1",
-                "OpenLogic:CentOS-HPC:7.3",
-                "OpenLogic:CentOS:7.1",
-                "OpenLogic:CentOS:7.3"
-            ],
-            "metadata": {
-                "description": "The OS image offer to use, eithe HPC with Intel MPI or the vanilla CentOS version."
-            }
-        },
-        "headNodeSize": {
-            "type": "string",
-            "defaultValue": "Standard_H16r",
-            "allowedValues": [
-                "Standard_A2",
-                "Standard_A4",
-                "Standard_A7",
-                "Standard_A8",
-                "Standard_A9",
-                "Standard_A10",
-                "Standard_A11",
-                "Standard_D4",
-                "Standard_D13",
-                "Standard_D14",
-                "Standard_DS4",
-                "Standard_DS13",
-                "Standard_DS14",
-                "Standard_D4_v2",
-                "Standard_D5_v2",
-                "Standard_D11_v2",
-                "Standard_D12_v2",
-                "Standard_D13_v2",
-                "Standard_D14_v2",
-                "Standard_D15_v2",
-                "Standard_DS1_v2",
-                "Standard_DS2_v2",
-                "Standard_DS3_v2",
-                "Standard_DS4_v2",
-                "Standard_DS5_v2",
-                "Standard_DS11_v2",
-                "Standard_DS12_v2",
-                "Standard_DS13_v2",
-                "Standard_DS14_v2",
-                "Standard_DS15_v2",
-                "Standard_F4",
-                "Standard_F8",
-                "Standard_F16",
-                "Standard_G3",
-                "Standard_G4",
-                "Standard_G5",
-                "Standard_GS3",
-                "Standard_GS4",
-                "Standard_GS5",
-                "Standard_H8",
-                "Standard_H16",
-                "Standard_H8m",
-                "Standard_H16m",
-                "Standard_H16mr",
-                "Standard_H16r",
-                "Standard_L4",
-                "Standard_L8",
-                "Standard_L16",
-                "Standard_L32"
-            ],
-            "metadata": {
-                "description": "Size of the head node."
-            }
-        },
-        "workerNodeSize": {
-            "type": "string",
-            "defaultValue": "Standard_H16r",
-            "allowedValues": [
-                "Standard_A2",
-                "Standard_A3",
-                "Standard_A4",
-                "Standard_A5",
-                "Standard_A6",
-                "Standard_A7",
-                "Standard_A8",
-                "Standard_A9",
-                "Standard_A10",
-                "Standard_A11",
-                "Standard_D1",
-                "Standard_D2",
-                "Standard_D3",
-                "Standard_D4",
-                "Standard_D11",
-                "Standard_D12",
-                "Standard_D13",
-                "Standard_D14",
-                "Standard_DS1",
-                "Standard_DS2",
-                "Standard_DS3",
-                "Standard_DS4",
-                "Standard_D11",
-                "Standard_D12",
-                "Standard_D13",
-                "Standard_D14",
-                "Standard_DS11",
-                "Standard_DS12",
-                "Standard_DS13",
-                "Standard_DS14",
-                "Standard_D1_v2",
-                "Standard_D2_v2",
-                "Standard_D3_v2",
-                "Standard_D4_v2",
-                "Standard_D5_v2",
-                "Standard_D11_v2",
-                "Standard_D12_v2",
-                "Standard_D13_v2",
-                "Standard_D14_v2",
-                "Standard_D15_v2",
-                "Standard_DS1_v2",
-                "Standard_DS2_v2",
-                "Standard_DS3_v2",
-                "Standard_DS4_v2",
-                "Standard_DS5_v2",
-                "Standard_DS11_v2",
-                "Standard_DS12_v2",
-                "Standard_DS13_v2",
-                "Standard_DS14_v2",
-                "Standard_DS15_v2",
-                "Standard_F1",
-                "Standard_F2",
-                "Standard_F4",
-                "Standard_F8",
-                "Standard_F16",
-                "Standard_G1",
-                "Standard_G2",
-                "Standard_G3",
-                "Standard_G4",
-                "Standard_G5",
-                "Standard_GS1",
-                "Standard_GS2",
-                "Standard_GS3",
-                "Standard_GS4",
-                "Standard_GS5",
-                "Standard_H8",
-                "Standard_H16",
-                "Standard_H8m",
-                "Standard_H16m",
-                "Standard_H16mr",
-                "Standard_H16r",
-                "Standard_L4",
-                "Standard_L8",
-                "Standard_L16",
-                "Standard_L32"
-            ],
-            "metadata": {
-                "description": "Size of the worker nodes."
-            }
-        },
-        "workerNodeCount": {
-            "type": "int",
-            "defaultValue": 2,
-            "metadata": {
-                "description": "This template creates N worker node. Use workerNodeCount to specify that N."
-            }
-        },
-        "dataDiskSize": {
-            "type": "int",
-            "defaultValue": 32,
-            "allowedValues": [
-                32,
-                64,
-                128,
-                512,
-                1024,
-                2048,
-                4095
-            ],
-            "metadata": {
-                "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
-            }
-        },
-        "storageAccountType": {
-            "type": "string",
-            "defaultValue": "Standard_LRS",
-            "allowedValues": [
-                "Standard_LRS",
-                "Premium_LRS"
-            ],
-            "metadata": {
-                "description": "Type of storage account to create for disks."
-            }
-        },
-        "installEasybuild": {
-            "type": "string",
-            "defaultValue": "No",
-            "allowedValues": [
-                "Yes",
-                "No"
-            ],
-            "metadata": {
-                "description": "Install the EasyBuild framework."
-            }
-        },
-        "clusterFilesystem": {
-            "type": "string",
-            "defaultValue": "None:None",
-            "allowedValues": [
-                "BeeGFS:Storage",
-                "BeeGFS:SSD",
-                "None:None"
-            ],
-            "metadata": {
-                "description": "Path to use for BeeGFS storage."
-            }
-        },
-        "frontendGroupName": {
-            "type": "string",
-            "defaultValue": "hpcacmfrontendgroup",
-            "metadata": {
-                "description": "Name for the frontend container group"
-            }
-        },
-        "frontendName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name for the frontend container"
-            },
-            "defaultValue": "frontend"
-        },
-        "frontendImageName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name for the frontend image"
-            },
-            "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:frontend"
-        },
-        "frontendPort": {
-            "type": "string",
-            "metadata": {
-                "description": "Port to open on the frontend container and the public IP address."
-            },
-            "defaultValue": "443"
-        },
-        "backendGroupName": {
-            "type": "string",
-            "defaultValue": "hpcacmbackendgroup",
-            "metadata": {
-                "description": "Name for the backend container group"
-            }
-        },
-        "jobMonitorName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name for the jobmonitor container"
-            },
-            "defaultValue": "jobmonitor"
-        },
-        "jobMonitorImageName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name for the jobmonitor image"
-            },
-            "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:jobmonitor"
-        },
-        "taskDispatcherName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name for the taskdispatcher container"
-            },
-            "defaultValue": "taskdispatcher"
-        },
-        "taskDispatcherImageName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name for the taskdispatcher image"
-            },
-            "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:taskdispatcher"
-        },
-        "dashboardName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name for the dashboard container"
-            },
-            "defaultValue": "dashboard"
-        },
-        "dashboardImageName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name for the dashboard image"
-            },
-            "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:dashboard"
-        },
-        "cpuCores": {
-            "type": "string",
-            "metadata": {
-                "description": "The number of CPU cores to allocate to the container."
-            },
-            "defaultValue": "1.0"
-        },
-        "memoryInGb": {
-            "type": "string",
-            "metadata": {
-                "description": "The amount of memory to allocate to the container in gigabytes."
-            },
-            "defaultValue": "1.5"
-        }
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "frontendServicePlanName": {
+      "defaultValue": "frontendServicePlan",
+      "type": "string",
+      "metadata": {
+        "description": "The name of App service plan for the frontend service"
+      }
     },
-    "variables": {
-        "generatedDnsNameLabel": "[if(empty(parameters('acmPortalNameLabel')), uniqueString(resourceGroup().id), parameters('acmPortalNameLabel'))]",
-        "storageAccountName": "[concat(uniqueString(resourceGroup().id), 'sa')]",
-        "imagePublisher": "[split(parameters('image'), ':')[0]]",
-        "imageOffer": "[split(parameters('image'), ':')[1]]",
-        "imageSku": "[split(parameters('image'), ':')[2]]",
-        "newStorageAccountName": "[concat(uniqueString(resourceGroup().id), 'sa')]",
-        "storageAccountName1": "[concat(uniqueString('1', resourceGroup().id), 'sa')]",
-        "storageAccountName2": "[concat(uniqueString('2', resourceGroup().id), 'sa')]",
-        "storageAccountName3": "[concat(uniqueString('3', resourceGroup().id), 'sa')]",
-        "storageAccountName4": "[concat(uniqueString('4', resourceGroup().id), 'sa')]",
-        "vmStorageAccountContainerName": "vhd",
-        "OSDiskName": "osdisk",
-        "publicIPAddressType": "Dynamic",
-        "publicIPAddressName": "publicips",
-        "masterVMName": "master",
-        "workerVMName": "worker",
-        "armApiVersion": "2015-06-15",
-        "computeApiVersion": "2016-04-30-preview",
-        "avSetName": "avSet",
-        "masterDiskCount": 4,
-        "workerDiskCount": 4,
-        "nicName": "nic",
-        "networkSettings": {
-            "virtualNetworkName": "virtualnetwork",
-            "addressPrefix": "10.0.0.0/16",
-            "subnet": {
-                "dse": {
-                    "name": "dse",
-                    "prefix": "10.0.0.0/24",
-                    "vnet": "virtualnetwork"
-                }
-            },
-            "statics": {
-                "workerRange": {
-                    "base": "10.0.0.",
-                    "start": 5
-                },
-                "master": "10.0.0.254"
-            }
-        },
-        "clusterFilesystem": "[split(parameters('clusterFilesystem'), ':')[0]]",
-        "clusterFilesystemStorageLocation": "[split(parameters('clusterFilesystem'), ':')[1]]",
-        "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('networkSettings').virtualNetworkName)]",
-        "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('networkSettings').subnet.dse.name)]",
-      "templateBaseUrl":"https://raw.githubusercontent.com/sunbinzhu/azure-hpc/master/Templates/hpc-cluster/",
-        "installationCLI": "[concat('bash azuredeploy.sh ', variables('masterVMName'), ' ', variables('workerVMName'), ' ', parameters('workerNodeCount'), ' ', parameters('hpcUserName'), ' ', variables('templateBaseUrl'), ' ', variables('clusterFilesystem'), ' ', variables('clusterFilesystemStorageLocation'), ' ', variables('imageOffer'), ' ', parameters('scheduler'), ' ', parameters('installEasybuild'))]"
+    "frontendServiceSkuName": {
+      "defaultValue": "B1",
+      "type": "string",
+      "metadata": {
+        "description": "The sku name of App service plan for the frontend service"
+      }
     },
-    "resources": [
-        {
-            "type": "Microsoft.Compute/availabilitySets",
-            "name": "[variables('avSetName')]",
-            "apiVersion": "[variables('computeApiVersion')]",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "platformFaultDomainCount": "2",
-                "platformUpdateDomainCount": "2",
-                "managed": "true"
-            }
-        },
-        {
-            "type": "Microsoft.Storage/storageAccounts",
-            "name": "[variables('storageAccountName')]",
-            "apiVersion": "2017-10-01",
-            "location": "[resourceGroup().location]",
-            "sku": {
-                "name": "[parameters('storageAccountType')]"
-            },
-            "kind": "Storage",
-            "properties": {}
-        },
-        {
-            "name": "[parameters('frontendGroupName')]",
-            "type": "Microsoft.ContainerInstance/containerGroups",
-            "apiVersion": "2018-06-01",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
-            ],
-            "properties": {
-                "containers": [
-                    {
-                        "name": "[parameters('frontendName')]",
-                        "properties": {
-                            "command": [],
-                            "image": "[parameters('frontendImageName')]",
-                            "ports": [
-                                {
-                                    "port": "[parameters('frontendPort')]"
-                                }
-                            ],
-                            "resources": {
-                                "requests": {
-                                    "cpu": "[parameters('cpuCores')]",
-                                    "memoryInGB": "[parameters('memoryInGb')]"
-                                }
-                            },
-                            "environmentVariables": [
-                                {
-                                    "name": "ServerOptions__Username",
-                                    "value": "[parameters('adminUserName')]"
-                                },
-                                {
-                                    "name": "ServerOptions__Password",
-                                    "secureValue": "[parameters('adminPassword')]"
-                                },
-                                {
-                                    "name": "CloudOptions__Storage__AccountName",
-                                    "value": "[variables('storageAccountName')]"
-                                },
-                                {
-                                    "name": "CloudOptions__Storage__KeyValue",
-                                    "secureValue": "[listKeys(resourceId(resourceGroup().name, 'Microsoft.Storage/storageAccounts', variables('storageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
-                                },
-                                {
-                                    "name": "fqdn",
-                                    "value": "[concat(variables('generatedDnsNameLabel'), '.', resourceGroup().location, '.azurecontainer.io')]"
-                                },
-                                {
-                                    "name": "apibase",
-                                    "value": "[concat('https://', variables('generatedDnsNameLabel'), '.', resourceGroup().location, '.azurecontainer.io/v1')]"
-                                }
-                            ]
-                        }
-                    }
-                ],
-                "osType": "Linux",
-                "restartPolicy": "OnFailure",
-                "ipAddress": {
-                    "type": "Public",
-                    "dnsNameLabel": "[variables('generatedDnsNameLabel')]",
-                    "ports": [
-                        {
-                            "protocol": "TCP",
-                            "port": "443"
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "name": "[parameters('backendGroupName')]",
-            "type": "Microsoft.ContainerInstance/containerGroups",
-            "apiVersion": "2018-06-01",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
-            ],
-            "properties": {
-                "containers": [
-                    {
-                        "name": "[parameters('dashboardName')]",
-                        "properties": {
-                            "command": [],
-                            "image": "[parameters('dashboardImageName')]",
-                            "resources": {
-                                "requests": {
-                                    "cpu": "[parameters('cpuCores')]",
-                                    "memoryInGB": "[parameters('memoryInGb')]"
-                                }
-                            },
-                            "environmentVariables": [
-                                {
-                                    "name": "CloudOptions__Storage__AccountName",
-                                    "value": "[variables('storageAccountName')]"
-                                },
-                                {
-                                    "name": "CloudOptions__Storage__KeyValue",
-                                    "secureValue": "[listKeys(resourceId(resourceGroup().name, 'Microsoft.Storage/storageAccounts', variables('storageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "name": "[parameters('taskDispatcherName')]",
-                        "properties": {
-                            "command": [],
-                            "image": "[parameters('taskDispatcherImageName')]",
-                            "resources": {
-                                "requests": {
-                                    "cpu": "[parameters('cpuCores')]",
-                                    "memoryInGB": "[parameters('memoryInGb')]"
-                                }
-                            },
-                            "environmentVariables": [
-                                {
-                                    "name": "CloudOptions__Storage__AccountName",
-                                    "value": "[variables('storageAccountName')]"
-                                },
-                                {
-                                    "name": "CloudOptions__Storage__KeyValue",
-                                    "secureValue": "[listKeys(resourceId(resourceGroup().name, 'Microsoft.Storage/storageAccounts', variables('storageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
-                                }
-                            ]
-                        }
-                    },
-                    {
-                        "name": "[parameters('jobMonitorName')]",
-                        "properties": {
-                            "command": [],
-                            "image": "[parameters('jobMonitorImageName')]",
-                            "resources": {
-                                "requests": {
-                                    "cpu": "[parameters('cpuCores')]",
-                                    "memoryInGB": "[parameters('memoryInGb')]"
-                                }
-                            },
-                            "environmentVariables": [
-                                {
-                                    "name": "CloudOptions__Storage__AccountName",
-                                    "value": "[variables('storageAccountName')]"
-                                },
-                                {
-                                    "name": "CloudOptions__Storage__KeyValue",
-                                    "secureValue": "[listKeys(resourceId(resourceGroup().name, 'Microsoft.Storage/storageAccounts', variables('storageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
-                                }
-                            ]
-                        }
-                    }
-                ],
-                "osType": "Linux",
-                "restartPolicy": "OnFailure"
-            }
-        },
-        {
-            "apiVersion": "[variables('armApiVersion')]",
-            "type": "Microsoft.Network/virtualNetworks",
-            "name": "[variables('networkSettings').virtualNetworkName]",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "addressSpace": {
-                    "addressPrefixes": [
-                        "[variables('networkSettings').addressPrefix]"
-                    ]
-                },
-                "subnets": [
-                    {
-                        "name": "[variables('networkSettings').subnet.dse.name]",
-                        "properties": {
-                            "addressPrefix": "[variables('networkSettings').subnet.dse.prefix]"
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "type": "Microsoft.Network/publicIPAddresses",
-            "apiVersion": "[variables('armApiVersion')]",
-            "name": "[variables('publicIPAddressName')]",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "publicIPAllocationMethod": "[variables('publicIPAddressType')]"
-            }
-        },
-        {
-            "type": "Microsoft.Network/networkSecurityGroups",
-            "name": "nsg",
-            "apiVersion": "[variables('armApiVersion')]",
-            "location": "[resourceGroup().location]",
-            "properties": {
-                "securityRules": [
-                    {
-                        "name": "SSH",
-                        "properties": {
-                            "protocol": "*",
-                            "sourcePortRange": "*",
-                            "destinationPortRange": "22",
-                            "sourceAddressPrefix": "*",
-                            "destinationAddressPrefix": "*",
-                            "access": "Allow",
-                            "priority": 100,
-                            "direction": "Inbound"
-                        }
-                    }
-                ]
-            },
-            "dependsOn": []
-        },
-        {
-            "apiVersion": "[variables('armApiVersion')]",
-            "type": "Microsoft.Network/networkInterfaces",
-            "name": "[variables('nicName')]",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
-                "[concat('Microsoft.Network/virtualNetworks/', variables('networkSettings').virtualNetworkName)]",
-                "Microsoft.Network/networkSecurityGroups/nsg"
-            ],
-            "properties": {
-                "ipConfigurations": [
-                    {
-                        "name": "ipconfig1",
-                        "properties": {
-                            "privateIPAllocationMethod": "Static",
-                            "privateIPAddress": "[variables('networkSettings').statics.master]",
-                            "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
-                            },
-                            "subnet": {
-                                "id": "[variables('subnetRef')]"
-                            }
-                        }
-                    }
-                ],
-                "networkSecurityGroup": {
-                    "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg')]"
-                }
-            }
-        },
-        {
-            "type": "Microsoft.Compute/disks",
-            "name": "[concat('masterdatadisk', copyindex())]",
-            "apiVersion": "[variables('computeApiVersion')]",
-            "location": "[resourceGroup().location]",
-            "copy": {
-                "name": "foo",
-                "count": "[variables('masterDiskCount')]"
-            },
-            "properties": {
-                "creationData": {
-                    "createOption": "Empty"
-                },
-                "accountType": "[parameters('storageAccountType')]",
-                "diskSizeGB": "[parameters('dataDiskSize')]"
-            }
-        },
-        {
-            "type": "Microsoft.Compute/disks",
-            "name": "[concat('workerdatadisk', copyindex())]",
-            "apiVersion": "[variables('computeApiVersion')]",
-            "location": "[resourceGroup().location]",
-            "copy": {
-                "name": "foo",
-                "count": "[mul(parameters('workerNodeCount'), variables('workerDiskCount'))]"
-            },
-            "properties": {
-                "creationData": {
-                    "createOption": "Empty"
-                },
-                "accountType": "[parameters('storageAccountType')]",
-                "diskSizeGB": "[parameters('dataDiskSize')]"
-            }
-        },
-        {
-            "apiVersion": "[variables('computeApiVersion')]",
-            "type": "Microsoft.Compute/virtualMachines",
-            "identity": { "type": "SystemAssigned" },
-            "name": "[variables('masterVMName')]",
-            "location": "[resourceGroup().location]",
-            "tags": {
-                "StorageConfiguration": "[concat('{\"AccountName\":\"', variables('storageAccountName'), '\" }')]"
-            },
-            "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'))]",
-                "[concat('Microsoft.Compute/availabilitySets/', variables('avSetName'))]",
-                "Microsoft.Compute/disks/masterdatadisk0",
-                "Microsoft.Compute/disks/masterdatadisk1",
-                "Microsoft.Compute/disks/masterdatadisk2",
-                "Microsoft.Compute/disks/masterdatadisk3"
-            ],
-            "properties": {
-                "availabilitySet": {
-                    "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('avSetName'))]"
-                },
-                "hardwareProfile": {
-                    "vmSize": "[parameters('headNodeSize')]"
-                },
-                "osProfile": {
-                    "computername": "[variables('masterVMName')]",
-                    "adminUsername": "[parameters('adminUsername')]",
-                    "adminPassword": "[parameters('adminPassword')]"
-                },
-                "storageProfile": {
-                    "imageReference": {
-                        "publisher": "[variables('imagePublisher')]",
-                        "offer": "[variables('imageOffer')]",
-                        "sku": "[variables('imageSku')]",
-                        "version": "latest"
-                    },
-                    "osDisk": {
-                        "createOption": "FromImage"
-                    },
-                    "dataDisks": [
-                        {
-                            "lun": 1,
-                            "createOption": "attach",
-                            "managedDisk": {
-                                "id": "[resourceId('Microsoft.Compute/disks', concat('masterdatadisk', 0))]"
-                            }
-                        },
-                        {
-                            "lun": 2,
-                            "createOption": "attach",
-                            "managedDisk": {
-                                "id": "[resourceId('Microsoft.Compute/disks', concat('masterdatadisk', 1))]"
-                            }
-                        },
-                        {
-                            "lun": 3,
-                            "createOption": "attach",
-                            "managedDisk": {
-                                "id": "[resourceId('Microsoft.Compute/disks', concat('masterdatadisk', 2))]"
-                            }
-                        },
-                        {
-                            "lun": 4,
-                            "createOption": "attach",
-                            "managedDisk": {
-                                "id": "[resourceId('Microsoft.Compute/disks', concat('masterdatadisk', 3))]"
-                            }
-                        }
-                    ]
-                },
-                "networkProfile": {
-                    "networkInterfaces": [
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('nicName'))]"
-                        }
-                    ]
-                }
-            }
-        },
-        {
-            "apiVersion": "[variables('computeApiVersion')]",
-            "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(variables('masterVMName'), '/Installation')]",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', variables('masterVMName'))]"
-            ],
-            "properties": {
-                "publisher": "Microsoft.OSTCExtensions",
-                "type": "CustomScriptForLinux",
-                "typeHandlerVersion": "1.3",
-                "settings": {
-                    "fileUris": [
-                        "[concat(variables('templateBaseUrl'), 'azuredeploy.sh')]"
-                    ],
-                    "commandToExecute": "[variables('installationCLI')]"
-                }
-            }
-        },
-        {
-            "apiVersion": "[variables('computeApiVersion')]",
-            "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(variables('masterVMName'), '/HpcAcmAgent')]",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', variables('masterVMName'))]"
-            ],
-            "properties": {
-                "publisher": "Microsoft.HpcPack",
-                "type": "HpcAcmAgent",
-                "typeHandlerVersion": "1.0",
-                "settings": {}
-            }
-        },
-        {
-            "apiVersion": "[variables('computeApiVersion')]",
-            "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(variables('workerVMName'), copyindex(), '/Installation')]",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', variables('masterVMName'), '/extensions/Installation')]",
-                "[concat('Microsoft.Compute/virtualMachines/', variables('workerVMName'), copyindex())]"
-            ],
-            "copy": {
-                "name": "foo",
-                "count": "[parameters('workerNodeCount')]"
-            },
-            "properties": {
-                "publisher": "Microsoft.OSTCExtensions",
-                "type": "CustomScriptForLinux",
-                "typeHandlerVersion": "1.3",
-                "settings": {
-                    "fileUris": [
-                        "[concat(variables('templateBaseUrl'), 'azuredeploy.sh')]"
-                    ],
-                    "commandToExecute": "[variables('installationCLI')]"
-                }
-            }
-        },
-        {
-            "apiVersion": "[variables('computeApiVersion')]",
-            "type": "Microsoft.Compute/virtualMachines/extensions",
-            "name": "[concat(variables('workerVMName'), copyindex(), '/HpcAcmAgent')]",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', variables('workerVMName'), copyindex())]"
-            ],
-            "copy": {
-                "name": "foo",
-                "count": "[parameters('workerNodeCount')]"
-            },
-            "properties": {
-                "publisher": "Microsoft.HpcPack",
-                "type": "HpcAcmAgent",
-                "typeHandlerVersion": "1.0",
-                "settings": {}
-            }
-        },
-        {
-            "apiVersion": "[variables('armApiVersion')]",
-            "type": "Microsoft.Network/networkInterfaces",
-            "name": "[concat(variables('nicName'), 'worker', copyindex())]",
-            "location": "[resourceGroup().location]",
-            "dependsOn": [
-                "[concat('Microsoft.Network/virtualNetworks/', variables('networkSettings').virtualNetworkName)]"
-            ],
-            "copy": {
-                "name": "foo",
-                "count": "[parameters('workerNodeCount')]"
-            },
-            "properties": {
-                "ipConfigurations": [
-                    {
-                        "name": "ipconfig1",
-                        "properties": {
-                            "privateIPAllocationMethod": "Static",
-                            "privateIPAddress": "[concat(variables('networkSettings').statics.workerRange.base, copyindex(variables('networkSettings').statics.workerRange.start))]",
-                            "subnet": {
-                                "id": "[variables('subnetRef')]"
-                            }
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "apiVersion": "2018-01-01-preview",
-            "name": "[guid(resourceGroup().id, variables('masterVMName'))]",
-            "type": "Microsoft.Authorization/roleAssignments",
-            "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', variables('masterVMName'))]",
-                "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
-            ],
-            "properties": {
-                "roleDefinitionId": "/providers/Microsoft.Authorization/roleDefinitions/17d1049b-9a84-46fb-8f53-869881c3d3ab",
-                "principalId": "[reference(concat(resourceId('Microsoft.Compute/virtualMachines/', variables('masterVMName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]",
-                "scope": "[concat(subscription().id, '/resourcegroups/', resourceGroup().name)]"
-            }
-        },
-        {
-            "apiVersion": "2018-01-01-preview",
-            "name": "[guid(resourceGroup().id, concat(variables('workerVMName'), copyindex()))]",
-            "type": "Microsoft.Authorization/roleAssignments",
-            "dependsOn": [
-                "[concat('Microsoft.Compute/virtualMachines/', variables('workerVMName'), copyindex())]",
-                "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
-            ],
-            "copy": {
-                "name": "anyname",
-                "count": "[parameters('workerNodeCount')]"
-            },
-            "properties": {
-                "roleDefinitionId": "/providers/Microsoft.Authorization/roleDefinitions/17d1049b-9a84-46fb-8f53-869881c3d3ab",
-                "principalId": "[reference(concat(resourceId('Microsoft.Compute/virtualMachines/', concat(variables('workerVMName'), copyindex())), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]",
-                "scope": "[concat(subscription().id, '/resourcegroups/', resourceGroup().name)]"
-            }
-        },
-        {
-            "apiVersion": "[variables('computeApiVersion')]",
-            "type": "Microsoft.Compute/virtualMachines",
-            "identity": { "type": "SystemAssigned" },
-            "name": "[concat(variables('workerVMName'), copyindex())]",
-            "location": "[resourceGroup().location]",
-            "tags": {
-                "StorageConfiguration": "[concat('{\"AccountName\":\"', variables('storageAccountName'), '\" }')]"
-            },
-            "dependsOn": [
-                "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), 'worker', copyindex())]",
-                "[concat('Microsoft.Compute/availabilitySets/', variables('avSetName'))]",
-                "[concat('Microsoft.Compute/disks/', 'workerdatadisk', add(mul(copyindex(), variables('workerDiskCount')), 0))]",
-                "[concat('Microsoft.Compute/disks/', 'workerdatadisk', add(mul(copyindex(), variables('workerDiskCount')), 1))]",
-                "[concat('Microsoft.Compute/disks/', 'workerdatadisk', add(mul(copyindex(), variables('workerDiskCount')), 2))]",
-                "[concat('Microsoft.Compute/disks/', 'workerdatadisk', add(mul(copyindex(), variables('workerDiskCount')), 3))]"
-            ],
-            "copy": {
-                "name": "foo",
-                "count": "[parameters('workerNodeCount')]"
-            },
-            "properties": {
-                "availabilitySet": {
-                    "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('avSetName'))]"
-                },
-                "hardwareProfile": {
-                    "vmSize": "[parameters('workerNodeSize')]"
-                },
-                "osProfile": {
-                    "computername": "[concat(variables('workerVMName'), copyindex())]",
-                    "adminUsername": "[parameters('adminUsername')]",
-                    "adminPassword": "[parameters('adminPassword')]"
-                },
-                "storageProfile": {
-                    "imageReference": {
-                        "publisher": "[variables('imagePublisher')]",
-                        "offer": "[variables('imageOffer')]",
-                        "sku": "[variables('imageSku')]",
-                        "version": "latest"
-                    },
-                    "osDisk": {
-                        "createOption": "FromImage"
-                    },
-                    "dataDisks": [
-                        {
-                            "lun": 1,
-                            "createOption": "attach",
-                            "managedDisk": {
-                                "id": "[resourceId('Microsoft.Compute/disks', concat('workerdatadisk', add(mul(copyindex(), variables('workerDiskCount')), 0)))]"
-                            }
-                        },
-                        {
-                            "lun": 2,
-                            "createOption": "attach",
-                            "managedDisk": {
-                                "id": "[resourceId('Microsoft.Compute/disks', concat('workerdatadisk', add(mul(copyindex(), variables('workerDiskCount')), 1)))]"
-                            }
-                        },
-                        {
-                            "lun": 3,
-                            "createOption": "attach",
-                            "managedDisk": {
-                                "id": "[resourceId('Microsoft.Compute/disks', concat('workerdatadisk', add(mul(copyindex(), variables('workerDiskCount')), 2)))]"
-                            }
-                        },
-                        {
-                            "lun": 4,
-                            "createOption": "attach",
-                            "managedDisk": {
-                                "id": "[resourceId('Microsoft.Compute/disks', concat('workerdatadisk', add(mul(copyindex(), variables('workerDiskCount')), 3)))]"
-                            }
-                        }
-                    ]
-                },
-                "networkProfile": {
-                    "networkInterfaces": [
-                        {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('nicName'), 'worker', copyindex()))]"
-                        }
-                    ]
-                }
-            }
-        }
-    ],
-    "outputs": {
-        "portalUri": {
-            "type": "string",
-            "value": "[concat('https://', reference(resourceId('Microsoft.ContainerInstance/containerGroups/', parameters('frontendGroupName'))).ipAddress.fqdn, '/')]"
-        }
+    "frontendServiceSkuTier": {
+      "defaultValue": "Basic",
+      "type": "string",
+      "metadata": {
+        "description": "The sku tier of App service plan for the frontend service"
+      }
+    },
+    "portalDnsNameLabel": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "The DNS name label. This label should be globally unique or leave empty then the deployment process will generate an unique string."
+      }
+    },
+    "aadAuthApplicationId": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "The existing authentication application Id used to logon the portal if specified"
+      }
+    },
+    "aadTenantId": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "The Id of the tenant in which the authentication application locates. If not specified, the current tenantId is used"
+      }
+    },
+    "storageAccountType": {
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_ZRS"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Storage Account type"
+      }
+    },
+    "storageAccountName": {
+      "defaultValue": "[uniquestring(resourceGroup().id)]",
+      "type": "string",
+      "metadata": {
+        "description": "Storage Account Name"
+      }
+    },
+    "frontendImageName": {
+      "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:frontend",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the frontend image"
+      }
+    },
+    "backendGroupName": {
+      "defaultValue": "hpcacmbackendgroup",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the backend container group"
+      }
+    },
+    "jobMonitorInstanceName": {
+      "defaultValue": "jobmonitor",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the jobmonitor container instance"
+      }
+    },
+    "jobMonitorImageName": {
+      "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:jobmonitor",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the jobmonitor image"
+      }
+    },
+    "jobMonitorCpuCores": {
+      "defaultValue": "1.0",
+      "type": "string",
+      "metadata": {
+        "description": "The number of CPU cores to allocate to the jobmonitor container instance."
+      }
+    },
+    "jobMonitorMemoryInGb": {
+      "defaultValue": "1.5",
+      "type": "string",
+      "metadata": {
+        "description": "The amount of memory in GB to allocate to the jobmonitor container instance."
+      }
+    },
+    "taskDispatcherInstanceName": {
+      "defaultValue": "taskdispatcher",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the taskdispatcher container instance"
+      }
+    },
+    "taskDispatcherImageName": {
+      "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:taskdispatcher",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the taskdispatcher image"
+      }
+    },
+    "taskDispatcherCpuCores": {
+      "defaultValue": "1.0",
+      "type": "string",
+      "metadata": {
+        "description": "The number of CPU cores to allocate to the taskDispatcher container instance."
+      }
+    },
+    "taskDispatcherMemoryInGb": {
+      "defaultValue": "1.5",
+      "type": "string",
+      "metadata": {
+        "description": "The amount of memory in GB to allocate to the taskDispatcher container instance."
+      }
+    },
+    "dashboardInstanceName": {
+      "defaultValue": "dashboard",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the dashboard container instance"
+      }
+    },
+    "dashboardImageName": {
+      "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:dashboard",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the dashboard image"
+      }
+    },
+    "dashboardCpuCores": {
+      "defaultValue": "1.0",
+      "type": "string",
+      "metadata": {
+        "description": "The number of CPU cores to allocate to the dashboard container instance."
+      }
+    },
+    "dashboardMemoryInGb": {
+      "defaultValue": "1.5",
+      "type": "string",
+      "metadata": {
+        "description": "The amount of memory in GB to allocate to the dashboard container instance."
+      }
+    },
+    "scheduler": {
+      "defaultValue": "Slurm",
+      "allowedValues": [
+        "Slurm",
+        "PBSPro-OSS",
+        "None"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "HPC scheduler to install."
+      }
+    },
+    "adminUserName": {
+      "defaultValue": "azureuser",
+      "type": "string",
+      "metadata": {
+        "description": "User name for the Virtual Machine. Pick a valid username otherwise there will be a BadRequest error."
+      }
+    },
+    "adminPassword": {
+      "defaultValue": "",
+      "type": "securestring",
+      "metadata": {
+        "description": "Admin password. Pick a complex password with uppercase letters, lowercase letters, digits, and symbols. The password should not be longer than 16. Otherwise you'll get a BadRequest error."
+      }
+    },
+    "hpcUserName": {
+      "defaultValue": "hpcuser",
+      "type": "string",
+      "metadata": {
+        "description": "User for running HPC applications with shared home directory and SSH public key authentication setup.  This user cannot login from outside the cluster. Pick a valid username otherwise there will be a BadRequest error."
+      }
+    },
+    "hpcNodeImage": {
+      "defaultValue": "OpenLogic:CentOS:7.3",
+      "allowedValues": [
+        "OpenLogic:CentOS-HPC:7.1",
+        "OpenLogic:CentOS-HPC:7.3",
+        "OpenLogic:CentOS:7.1",
+        "OpenLogic:CentOS:7.3"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "The OS image offer to use, eithe HPC with Intel MPI or the vanilla CentOS version."
+      }
+    },
+    "headNodeName": {
+      "defaultValue": "master",
+      "type": "string",
+      "metadata": {
+        "description": "The VM name of head node."
+      }
+    },
+    "headNodeSize": {
+      "defaultValue": "Standard_D4_v2",
+      "allowedValues": [
+        "Standard_A2",
+        "Standard_A4",
+        "Standard_A7",
+        "Standard_A8",
+        "Standard_A9",
+        "Standard_A10",
+        "Standard_A11",
+        "Standard_D4",
+        "Standard_D13",
+        "Standard_D14",
+        "Standard_DS4",
+        "Standard_DS13",
+        "Standard_DS14",
+        "Standard_D4_v2",
+        "Standard_D5_v2",
+        "Standard_D11_v2",
+        "Standard_D12_v2",
+        "Standard_D13_v2",
+        "Standard_D14_v2",
+        "Standard_D15_v2",
+        "Standard_DS1_v2",
+        "Standard_DS2_v2",
+        "Standard_DS3_v2",
+        "Standard_DS4_v2",
+        "Standard_DS5_v2",
+        "Standard_DS11_v2",
+        "Standard_DS12_v2",
+        "Standard_DS13_v2",
+        "Standard_DS14_v2",
+        "Standard_DS15_v2",
+        "Standard_F4",
+        "Standard_F8",
+        "Standard_F16",
+        "Standard_G3",
+        "Standard_G4",
+        "Standard_G5",
+        "Standard_GS3",
+        "Standard_GS4",
+        "Standard_GS5",
+        "Standard_H8",
+        "Standard_H16",
+        "Standard_H8m",
+        "Standard_H16m",
+        "Standard_H16mr",
+        "Standard_H16r",
+        "Standard_L4",
+        "Standard_L8",
+        "Standard_L16",
+        "Standard_L32"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Size of the head node."
+      }
+    },
+    "headNodeOsDiskType": {
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Head node OS Disk Account type"
+      }
+    },
+    "headNodeDataDiskType": {
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS",
+        "UltraSSD_LRS"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Head node OS Disk Account type"
+      }
+    },
+    "workerNodeNamePrefix": {
+      "defaultValue": "worker",
+      "type": "string",
+      "metadata": {
+        "description": "The VM name prefix of the work nodes."
+      }
+    },
+    "workerNodeSize": {
+      "defaultValue": "Standard_D2_v2",
+      "allowedValues": [
+        "Standard_A2",
+        "Standard_A3",
+        "Standard_A4",
+        "Standard_A5",
+        "Standard_A6",
+        "Standard_A7",
+        "Standard_A8",
+        "Standard_A9",
+        "Standard_A10",
+        "Standard_A11",
+        "Standard_D1",
+        "Standard_D2",
+        "Standard_D3",
+        "Standard_D4",
+        "Standard_D11",
+        "Standard_D12",
+        "Standard_D13",
+        "Standard_D14",
+        "Standard_DS1",
+        "Standard_DS2",
+        "Standard_DS3",
+        "Standard_DS4",
+        "Standard_D11",
+        "Standard_D12",
+        "Standard_D13",
+        "Standard_D14",
+        "Standard_DS11",
+        "Standard_DS12",
+        "Standard_DS13",
+        "Standard_DS14",
+        "Standard_D1_v2",
+        "Standard_D2_v2",
+        "Standard_D3_v2",
+        "Standard_D4_v2",
+        "Standard_D5_v2",
+        "Standard_D11_v2",
+        "Standard_D12_v2",
+        "Standard_D13_v2",
+        "Standard_D14_v2",
+        "Standard_D15_v2",
+        "Standard_DS1_v2",
+        "Standard_DS2_v2",
+        "Standard_DS3_v2",
+        "Standard_DS4_v2",
+        "Standard_DS5_v2",
+        "Standard_DS11_v2",
+        "Standard_DS12_v2",
+        "Standard_DS13_v2",
+        "Standard_DS14_v2",
+        "Standard_DS15_v2",
+        "Standard_F1",
+        "Standard_F2",
+        "Standard_F4",
+        "Standard_F8",
+        "Standard_F16",
+        "Standard_G1",
+        "Standard_G2",
+        "Standard_G3",
+        "Standard_G4",
+        "Standard_G5",
+        "Standard_GS1",
+        "Standard_GS2",
+        "Standard_GS3",
+        "Standard_GS4",
+        "Standard_GS5",
+        "Standard_H8",
+        "Standard_H16",
+        "Standard_H8m",
+        "Standard_H16m",
+        "Standard_H16mr",
+        "Standard_H16r",
+        "Standard_L4",
+        "Standard_L8",
+        "Standard_L16",
+        "Standard_L32"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Size of the worker nodes."
+      }
+    },
+    "workerNodeCount": {
+      "defaultValue": 2,
+      "type": "int",
+      "metadata": {
+        "description": "This template creates N worker node. Use workerNodeCount to specify that N."
+      }
+    },
+    "headNodeDataDiskCount": {
+      "defaultValue": 1,
+      "allowedValues": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "type": "int",
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+      }
+    },
+    "workerNodeDataDiskCount": {
+      "defaultValue": 1,
+      "allowedValues": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "type": "int",
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+      }
+    },
+    "workerNodeOsDiskType": {
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Head node OS Disk Account type"
+      }
+    },
+    "workerNodeDataDiskType": {
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS",
+        "UltraSSD_LRS"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Head node OS Disk Account type"
+      }
+    },
+    "dataDiskSize": {
+      "defaultValue": 32,
+      "allowedValues": [
+        32,
+        64,
+        128,
+        512,
+        1024,
+        2048,
+        4095
+      ],
+      "type": "int",
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+      }
+    },
+    "installEasybuild": {
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Install the EasyBuild framework."
+      }
+    },
+    "clusterFilesystem": {
+      "defaultValue": "None:None",
+      "allowedValues": [
+        "BeeGFS:Storage",
+        "BeeGFS:SSD",
+        "None:None"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Path to use for BeeGFS storage."
+      }
+    },
+    "location": {
+      "defaultValue": "[resourceGroup().location]",
+      "type": "string",
+      "metadata": {
+        "description": "Location for all resources."
+      }
     }
+  },
+  "variables": {
+    "aadTenantId": "[if(empty(parameters('aadTenantId')), subscription().tenantId, parameters('aadTenantId'))]",
+    "aadAuthIssuer": "[if(empty(parameters('aadAuthApplicationId')), json('null'), concat('https://sts.windows.net/', variables('aadTenantId'), '/'))]",
+    "aadAuthClientId": "[if(empty(parameters('aadAuthApplicationId')), json('null'), parameters('aadAuthApplicationId'))]",
+    "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
+    "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), uniqueString(resourceGroup().id), parameters('portalDnsNameLabel'))]",
+    "artifactsBaseUrl": "https://raw.githubusercontent.com/sunbinzhu/azure-hpc/master/Templates/hpc-cluster/"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "sku": {
+        "name": "[parameters('storageAccountType')]"
+      },
+      "kind": "Storage",
+      "name": "[parameters('storageAccountName')]",
+      "apiVersion": "2018-07-01",
+      "location": "[parameters('location')]",
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "sku": {
+        "name": "[parameters('frontendServiceSkuName')]",
+        "tier": "[parameters('frontendServiceSkuTier')]"
+      },
+      "kind": "linux",
+      "name": "[parameters('frontendServicePlanName')]",
+      "apiVersion": "2018-02-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "reserved": true,
+        "numberOfWorkers": "1"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "name": "[parameters('portalDnsNameLabel')]",
+      "apiVersion": "2018-02-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('frontendServicePlanName'))]",
+        "reserved": true,
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "CloudOptions__Storage__AccountName",
+              "value": "[parameters('storageAccountName')]"
+            },
+            {
+              "name": "WEBSITES_PORT",
+              "value": "5000"
+            }
+          ],
+          "connectionStrings": [
+            {
+              "name": "CloudOptions__Storage__KeyValue",
+              "connectionString": "[listKeys(variables('storageAccountId'), '2018-07-01').keys[0].value]",
+              "type": "Custom"
+            }
+          ],
+          "appCommandLine": "",
+          "linuxFxVersion": "[concat('DOCKER|', parameters('frontendImageName'))]"
+        }
+      },
+      "resources": [
+        {
+          "type": "Microsoft.Web/sites/config",
+          "name": "[concat(parameters('portalDnsNameLabel'), '/authsettings')]",
+          "apiVersion": "2018-02-01",
+          "properties": {
+            "enabled": true,
+            "unauthenticatedClientAction": "RedirectToLoginPage",
+            "defaultProvider": "AzureActiveDirectory",
+            "clientId": "[variables('aadAuthClientId')]",
+            "issuer": "[variables('aadAuthIssuer')]"
+          },
+          "dependsOn": [
+            "[concat('Microsoft.Web/sites/', parameters('portalDnsNameLabel'))]"
+          ]
+        }
+      ],
+      "dependsOn": [
+        "[concat('Microsoft.Web/serverfarms/', parameters('frontendServicePlanName'))]",
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "name": "[parameters('backendGroupName')]",
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "containers": [
+          {
+            "name": "[parameters('dashboardInstanceName')]",
+            "properties": {
+              "command": [],
+              "image": "[parameters('dashboardImageName')]",
+              "resources": {
+                "requests": {
+                  "cpu": "[parameters('dashboardCpuCores')]",
+                  "memoryInGB": "[parameters('dashboardMemoryInGb')]"
+                }
+              },
+              "environmentVariables": [
+                {
+                  "name": "CloudOptions__Storage__AccountName",
+                  "value": "[parameters('storageAccountName')]"
+                },
+                {
+                  "name": "CloudOptions__Storage__KeyValue",
+                  "secureValue": "[listKeys(variables('storageAccountId'), '2018-07-01').keys[0].value]"
+                }
+              ]
+            }
+          },
+          {
+            "name": "[parameters('taskDispatcherInstanceName')]",
+            "properties": {
+              "command": [],
+              "image": "[parameters('taskDispatcherImageName')]",
+              "resources": {
+                "requests": {
+                  "cpu": "[parameters('taskDispatcherCpuCores')]",
+                  "memoryInGB": "[parameters('taskDispatcherMemoryInGb')]"
+                }
+              },
+              "environmentVariables": [
+                {
+                  "name": "CloudOptions__Storage__AccountName",
+                  "value": "[parameters('storageAccountName')]"
+                },
+                {
+                  "name": "CloudOptions__Storage__KeyValue",
+                  "secureValue": "[listKeys(variables('storageAccountId'), '2018-07-01').keys[0].value]"
+                }
+              ]
+            }
+          },
+          {
+            "name": "[parameters('jobMonitorInstanceName')]",
+            "properties": {
+              "command": [],
+              "image": "[parameters('jobMonitorImageName')]",
+              "resources": {
+                "requests": {
+                  "cpu": "[parameters('jobMonitorCpuCores')]",
+                  "memoryInGB": "[parameters('jobMonitorMemoryInGb')]"
+                }
+              },
+              "environmentVariables": [
+                {
+                  "name": "CloudOptions__Storage__AccountName",
+                  "value": "[parameters('storageAccountName')]"
+                },
+                {
+                  "name": "CloudOptions__Storage__KeyValue",
+                  "secureValue": "[listKeys(variables('storageAccountId'), '2018-07-01').keys[0].value]"
+                }
+              ]
+            }
+          }
+        ],
+        "osType": "Linux",
+        "restartPolicy": "OnFailure"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+      ]
+    },
+    {
+      "condition": "[not(equals(parameters('scheduler'), 'None'))]",
+      "apiVersion": "2018-05-01",
+      "type": "Microsoft.Resources/deployments",
+      "name": "deployHpcCluster",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[uri(variables('artifactsBaseUrl'), 'hpccluster.json')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "scheduler": {
+            "value": "[parameters('scheduler')]"
+          },
+          "adminUserName": {
+            "value": "[parameters('adminUserName')]"
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "hpcUserName": {
+            "value": "[parameters('hpcUserName')]"
+          },
+          "hpcNodeImage": {
+            "value": "[parameters('hpcNodeImage')]"
+          },
+          "headNodeName": {
+            "value": "[parameters('headNodeName')]"
+          },
+          "headNodeSize": {
+            "value": "[parameters('headNodeSize')]"
+          },
+          "headNodeOsDiskType": {
+            "value": "[parameters('headNodeOsDiskType')]"
+          },
+          "headNodeDataDiskType": {
+            "value": "[parameters('headNodeDataDiskType')]"
+          },
+          "workerNodeNamePrefix": {
+            "value": "[parameters('workerNodeNamePrefix')]"
+          },
+          "workerNodeSize": {
+            "value": "[parameters('workerNodeSize')]"
+          },
+          "workerNodeCount": {
+            "value": "[parameters('workerNodeCount')]"
+          },
+          "workerNodeDataDiskCount": {
+            "value": "[parameters('workerNodeDataDiskCount')]"
+          },
+          "workerNodeOsDiskType": {
+            "value": "[parameters('workerNodeOsDiskType')]"
+          },
+          "workerNodeDataDiskType": {
+            "value": "[parameters('workerNodeDataDiskType')]"
+          },
+          "dataDiskSize": {
+            "value": "[parameters('dataDiskSize')]"
+          },
+          "installEasybuild": {
+            "value": "[parameters('installEasybuild')]"
+          },
+          "clusterFilesystem": {
+            "value": "[parameters('clusterFilesystem')]"
+          },
+          "storageAccountName": {
+            "value": "[parameters('storageAccountName')]"
+          },
+          "_artifactsLocation": {
+            "value": "[variables('artifactsBaseUrl')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        }
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "portalUri": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', parameters('portalDnsNameLabel'))).properties.defaultHostName, '/')]"
+    }
+  }
 }

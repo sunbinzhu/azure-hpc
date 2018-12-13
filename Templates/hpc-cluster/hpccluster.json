@@ -1,0 +1,633 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "scheduler": {
+      "defaultValue": "Slurm",
+      "allowedValues": [
+        "Slurm",
+        "PBSPro-OSS",
+        "None"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "HPC scheduler to install."
+      }
+    },
+    "adminUserName": {
+      "defaultValue": "azureuser",
+      "type": "string",
+      "metadata": {
+        "description": "User name for the Virtual Machine. Pick a valid username otherwise there will be a BadRequest error."
+      }
+    },
+    "adminPassword": {
+      "defaultValue": "",
+      "type": "securestring",
+      "metadata": {
+        "description": "Admin password. Pick a complex password with uppercase letters, lowercase letters, digits, and symbols. The password should not be longer than 16. Otherwise you'll get a BadRequest error."
+      }
+    },
+    "hpcUserName": {
+      "defaultValue": "hpcuser",
+      "type": "string",
+      "metadata": {
+        "description": "User for running HPC applications with shared home directory and SSH public key authentication setup.  This user cannot login from outside the cluster. Pick a valid username otherwise there will be a BadRequest error."
+      }
+    },
+    "hpcNodeImage": {
+      "defaultValue": "OpenLogic:CentOS-HPC:7.3",
+      "allowedValues": [
+        "OpenLogic:CentOS-HPC:7.1",
+        "OpenLogic:CentOS-HPC:7.3",
+        "OpenLogic:CentOS:7.1",
+        "OpenLogic:CentOS:7.3"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "The OS image offer to use, eithe HPC with Intel MPI or the vanilla CentOS version."
+      }
+    },
+    "headNodeName": {
+      "defaultValue": "master",
+      "type": "string",
+      "metadata": {
+        "description": "The VM name of head node."
+      }
+    },
+    "headNodeSize": {
+      "defaultValue": "Standard_DS4_v2",
+      "type": "string",
+      "metadata": {
+        "description": "Size of the head node."
+      }
+    },
+    "headNodeOsDiskType": {
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Head node OS Disk Account type"
+      }
+    },
+    "headNodeDataDiskType": {
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS",
+        "UltraSSD_LRS"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Head node OS Disk Account type"
+      }
+    },
+    "workerNodeNamePrefix": {
+      "defaultValue": "worker",
+      "type": "string",
+      "metadata": {
+        "description": "The VM name prefix of the work nodes."
+      }
+    },
+    "workerNodeSize": {
+      "defaultValue": "Standard_D2_v2",
+      "type": "string",
+      "metadata": {
+        "description": "Size of the worker nodes."
+      }
+    },
+    "workerNodeCount": {
+      "defaultValue": 2,
+      "type": "int",
+      "metadata": {
+        "description": "This template creates N worker node. Use workerNodeCount to specify that N."
+      }
+    },
+    "headNodeDataDiskCount": {
+      "defaultValue": 1,
+      "allowedValues": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "type": "int",
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+      }
+    },
+    "workerNodeDataDiskCount": {
+      "defaultValue": 1,
+      "allowedValues": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "type": "int",
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+      }
+    },
+    "workerNodeOsDiskType": {
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Head node OS Disk Account type"
+      }
+    },
+    "workerNodeDataDiskType": {
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "StandardSSD_LRS",
+        "Premium_LRS",
+        "UltraSSD_LRS"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Head node OS Disk Account type"
+      }
+    },
+    "dataDiskSize": {
+      "defaultValue": 32,
+      "allowedValues": [
+        32,
+        64,
+        128,
+        512,
+        1024,
+        2048,
+        4095
+      ],
+      "type": "int",
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+      }
+    },
+    "installEasybuild": {
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Install the EasyBuild framework."
+      }
+    },
+    "clusterFilesystem": {
+      "defaultValue": "None:None",
+      "allowedValues": [
+        "BeeGFS:Storage",
+        "BeeGFS:SSD",
+        "None:None"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Path to use for BeeGFS storage."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Storage Account Name"
+      }
+    },
+    "_artifactsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "The base URI where artifacts (nested templates or scripts) required by this template are located."
+      }
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "The sasToken required to access _artifactsLocation."
+      }
+    },
+    "location": {
+      "defaultValue": "[resourceGroup().location]",
+      "type": "string",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    }
+  },
+  "variables": {
+    "imagePublisher": "[split(parameters('hpcNodeImage'), ':')[0]]",
+    "imageOffer": "[split(parameters('hpcNodeImage'), ':')[1]]",
+    "imageSku": "[split(parameters('hpcNodeImage'), ':')[2]]",
+    "nsgName": "[concat(parameters('headNodeName'), '-nsg')]",
+    "publicIPAddressType": "Dynamic",
+    "publicIPAddressName": "[concat(parameters('headNodeName'), '-publicip')]",
+    "avSetName": "[concat(parameters('headNodeName'), '-avSet')]",
+    "networkSettings": {
+      "virtualNetworkName": "[concat(parameters('headNodeName'), '-VNet')]",
+      "addressPrefix": "10.0.0.0/16",
+      "subnet": {
+        "dse": {
+          "name": "dse",
+          "prefix": "10.0.0.0/24",
+          "vnet": "virtualnetwork"
+        }
+      },
+      "statics": {
+        "workerRange": {
+          "base": "10.0.0.",
+          "start": 5
+        },
+        "master": "10.0.0.254"
+      }
+    },
+    "headNodeNicName": "[concat('nic-', parameters('headNodeName'))]",
+    "workerNodeNicNamePrefix": "[concat('nic-', parameters('workerNodeNamePrefix'))]",
+    "clusterFilesystem": "[split(parameters('clusterFilesystem'), ':')[0]]",
+    "clusterFilesystemStorageLocation": "[split(parameters('clusterFilesystem'), ':')[1]]",
+    "vnetID": "[resourceId('Microsoft.Network/virtualNetworks',variables('networkSettings').virtualNetworkName)]",
+    "subnetRef": "[concat(variables('vnetID'),'/subnets/',variables('networkSettings').subnet.dse.name)]",
+    "installationCLI": "[concat('bash azuredeploy.sh ', parameters('headNodeName'), ' ', parameters('workerNodeNamePrefix'), ' ', parameters('workerNodeCount'), ' ', parameters('hpcUserName'), ' ', parameters('_artifactsLocation'), ' ', variables('clusterFilesystem'), ' ', variables('clusterFilesystemStorageLocation'), ' ', variables('imageOffer'), ' ', parameters('scheduler'), ' ', parameters('installEasybuild'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "name": "[variables('networkSettings').virtualNetworkName]",
+      "apiVersion": "2018-08-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('networkSettings').addressPrefix]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('networkSettings').subnet.dse.name]",
+            "properties": {
+              "addressPrefix": "[variables('networkSettings').subnet.dse.prefix]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Compute/availabilitySets",
+      "sku": {
+        "name": "Aligned"
+      },
+      "name": "[variables('avSetName')]",
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "platformFaultDomainCount": "2",
+        "platformUpdateDomainCount": "5"
+      }
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('publicIPAddressName')]",
+      "apiVersion": "2018-08-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "[variables('publicIPAddressType')]"
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[variables('nsgName')]",
+      "apiVersion": "2018-08-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "SSH",
+            "properties": {
+              "protocol": "*",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      },
+      "dependsOn": []
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[variables('headNodeNicName')]",
+      "apiVersion": "2018-08-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[variables('networkSettings').statics.master]",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
+              },
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              }
+            }
+          }
+        ],
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
+        }
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/publicIPAddresses/', variables('publicIPAddressName'))]",
+        "[concat('Microsoft.Network/virtualNetworks/', variables('networkSettings').virtualNetworkName)]",
+        "[concat('Microsoft.Network/networkSecurityGroups/', variables('nsgName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[parameters('headNodeName')]",
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "tags": {
+        "StorageConfiguration": "[concat('{\"AccountName\":\"', parameters('storageAccountName'), '\" }')]"
+      },
+      "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('avSetName'))]"
+        },
+        "hardwareProfile": {
+          "vmSize": "[parameters('headNodeSize')]"
+        },
+        "osProfile": {
+          "computername": "[parameters('headNodeName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('imagePublisher')]",
+            "offer": "[variables('imageOffer')]",
+            "sku": "[variables('imageSku')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "[parameters('headNodeOsDiskType')]"
+            }
+          },
+          "copy": [
+            {
+              "name": "dataDisks",
+              "count": "[parameters('headNodeDataDiskCount')]",
+              "input": {
+                "name": "[concat(parameters('headNodeName'), '-data', copyIndex('dataDisks'))]",
+                "lun": "[copyIndex('dataDisks')]",
+                "createOption": "Empty",
+                "diskSizeGB": "[parameters('dataDiskSize')]",
+                "managedDisk": {
+                  "storageAccountType": "[parameters('headNodeDataDiskType')]"
+                }
+              }
+            }
+          ]
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',variables('headNodeNicName'))]"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', variables('headNodeNicName'))]",
+        "[concat('Microsoft.Compute/availabilitySets/', variables('avSetName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('headNodeName'), '/Installation')]",
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publisher": "Microsoft.OSTCExtensions",
+        "type": "CustomScriptForLinux",
+        "typeHandlerVersion": "1.3",
+        "settings": {
+          "fileUris": [
+            "[uri(parameters('_artifactsLocation'), concat('azuredeploy.sh', parameters('_artifactsLocationSasToken')))]"
+          ],
+          "commandToExecute": "[variables('installationCLI')]"
+        }
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'))]"
+      ]
+    },
+    {
+      "condition": "[not(equals(parameters('scheduler'), 'None'))]",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('headNodeName'), '/HpcAcmAgent')]",
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publisher": "Microsoft.HpcPack",
+        "type": "HpcAcmAgent",
+        "typeHandlerVersion": "1.0",
+        "settings": {}
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('workerNodeNamePrefix'), copyindex(), '/Installation')]",
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "foo",
+        "count": "[parameters('workerNodeCount')]"
+      },
+      "properties": {
+        "publisher": "Microsoft.OSTCExtensions",
+        "type": "CustomScriptForLinux",
+        "typeHandlerVersion": "1.3",
+        "settings": {
+          "fileUris": [
+            "[uri(parameters('_artifactsLocation'), concat('azuredeploy.sh', parameters('_artifactsLocationSasToken')))]"
+          ],
+          "commandToExecute": "[variables('installationCLI')]"
+        }
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'), '/extensions/Installation')]",
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex())]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "name": "[concat(parameters('workerNodeNamePrefix'), copyindex(), '/HpcAcmAgent')]",
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "foo",
+        "count": "[parameters('workerNodeCount')]"
+      },
+      "properties": {
+        "publisher": "Microsoft.HpcPack",
+        "type": "HpcAcmAgent",
+        "typeHandlerVersion": "1.0",
+        "settings": {}
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex())]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat(variables('workerNodeNicNamePrefix'), copyindex())]",
+      "apiVersion": "2018-08-01",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "foo",
+        "count": "[parameters('workerNodeCount')]"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "[concat(variables('networkSettings').statics.workerRange.base, copyindex(variables('networkSettings').statics.workerRange.start))]",
+              "subnet": {
+                "id": "[variables('subnetRef')]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/virtualNetworks/', variables('networkSettings').virtualNetworkName)]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "name": "[guid(resourceGroup().id, parameters('headNodeName'))]",
+      "apiVersion": "2017-09-01",
+      "properties": {
+        "roleDefinitionId": "/providers/Microsoft.Authorization/roleDefinitions/17d1049b-9a84-46fb-8f53-869881c3d3ab",
+        "principalId": "[reference(concat(resourceId('Microsoft.Compute/virtualMachines/', parameters('headNodeName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]",
+        "scope": "[concat(subscription().id, '/resourcegroups/', resourceGroup().name)]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "name": "[guid(resourceGroup().id, concat(parameters('workerNodeNamePrefix'), copyindex()))]",
+      "apiVersion": "2017-09-01",
+      "copy": {
+        "name": "anyname",
+        "count": "[parameters('workerNodeCount')]"
+      },
+      "properties": {
+        "roleDefinitionId": "/providers/Microsoft.Authorization/roleDefinitions/17d1049b-9a84-46fb-8f53-869881c3d3ab",
+        "principalId": "[reference(concat(resourceId('Microsoft.Compute/virtualMachines/', concat(parameters('workerNodeNamePrefix'), copyindex())), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]",
+        "scope": "[concat(subscription().id, '/resourcegroups/', resourceGroup().name)]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex())]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[concat(parameters('workerNodeNamePrefix'), copyindex())]",
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "copy": {
+        "name": "foo",
+        "count": "[parameters('workerNodeCount')]"
+      },
+      "identity": {
+        "type": "SystemAssigned"
+      },
+      "tags": {
+        "StorageConfiguration": "[concat('{\"AccountName\":\"', parameters('storageAccountName'), '\" }')]"
+      },
+      "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('avSetName'))]"
+        },
+        "hardwareProfile": {
+          "vmSize": "[parameters('workerNodeSize')]"
+        },
+        "osProfile": {
+          "computername": "[concat(parameters('workerNodeNamePrefix'), copyindex())]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('imagePublisher')]",
+            "offer": "[variables('imageOffer')]",
+            "sku": "[variables('imageSku')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "[parameters('workerNodeOsDiskType')]"
+            }
+          },
+          "copy": [
+            {
+              "name": "dataDisks",
+              "count": "[parameters('workerNodeDataDiskCount')]",
+              "input": {
+                "name": "[concat(parameters('workerNodeNamePrefix'), copyindex(), '-data', copyIndex('dataDisks'))]",
+                "lun": "[copyIndex('dataDisks')]",
+                "createOption": "Empty",
+                "diskSizeGB": "[parameters('dataDiskSize')]",
+                "managedDisk": {
+                  "storageAccountType": "[parameters('workerNodeDataDiskType')]"
+                }
+              }
+            }
+          ]
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces',concat(variables('workerNodeNicNamePrefix'), copyindex()))]"
+            }
+          ]
+        }
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', variables('workerNodeNicNamePrefix'), copyindex())]",
+        "[concat('Microsoft.Compute/availabilitySets/', variables('avSetName'))]"
+      ]
+    }
+  ]
+}
