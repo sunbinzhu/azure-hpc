@@ -559,26 +559,25 @@
           "linuxFxVersion": "[concat('DOCKER|', parameters('frontendImageName'))]"
         }
       },
-      "resources": [
-        {
-          "type": "Microsoft.Web/sites/config",
-          "name": "[concat(variables('portalDnsNameLabel'), '/authsettings')]",
-          "apiVersion": "2018-02-01",
-          "properties": {
-            "enabled": true,
-            "unauthenticatedClientAction": "RedirectToLoginPage",
-            "defaultProvider": "AzureActiveDirectory",
-            "clientId": "[variables('aadAuthClientId')]",
-            "issuer": "[variables('aadAuthIssuer')]"
-          },
-          "dependsOn": [
-            "[concat('Microsoft.Web/sites/', variables('portalDnsNameLabel'))]"
-          ]
-        }
-      ],
       "dependsOn": [
         "[concat('Microsoft.Web/serverfarms/', parameters('frontendServicePlanName'))]",
         "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "name": "[concat(variables('portalDnsNameLabel'), '/authsettings')]",
+      "apiVersion": "2018-02-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "enabled": true,
+        "unauthenticatedClientAction": "RedirectToLoginPage",
+        "defaultProvider": "AzureActiveDirectory",
+        "clientId": "[variables('aadAuthClientId')]",
+        "issuer": "[variables('aadAuthIssuer')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Web/sites/', variables('portalDnsNameLabel'))]"
       ]
     },
     {
