@@ -399,7 +399,7 @@
               "name": "dataDisks",
               "count": "[parameters('headNodeDataDiskCount')]",
               "input": {
-                "name": "[concat(parameters('headNodeName'), '-data', copyIndex('dataDisks'))]",
+                "name": "[concat(parameters('headNodeName'), '_DataDisk_', copyIndex('dataDisks'))]",
                 "lun": "[copyIndex('dataDisks')]",
                 "createOption": "Empty",
                 "diskSizeGB": "[parameters('dataDiskSize')]",
@@ -605,7 +605,7 @@
               "name": "dataDisks",
               "count": "[parameters('workerNodeDataDiskCount')]",
               "input": {
-                "name": "[concat(parameters('workerNodeNamePrefix'), copyindex(), '-data', copyIndex('dataDisks'))]",
+                "name": "[concat(parameters('workerNodeNamePrefix'), copyindex(), '_DataDisk_', copyIndex('dataDisks'))]",
                 "lun": "[copyIndex('dataDisks')]",
                 "createOption": "Empty",
                 "diskSizeGB": "[parameters('dataDiskSize')]",

@@ -3,10 +3,10 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "frontendServicePlanName": {
-      "defaultValue": "frontendServicePlan",
+      "defaultValue": "",
       "type": "string",
       "metadata": {
-        "description": "The name of App service plan for the frontend service"
+        "description": "The name of App service plan for the frontend service, will be automatically generated if not specified"
       }
     },
     "frontendServiceSkuName": {
@@ -494,9 +494,11 @@
     }
   },
   "variables": {
+    "storageAccountName": "[if(empty(parameters('storageAccountName')), uniqueString(resourceGroup().id, 'storage'), tolower(parameters('storageAccountName')))]",
+    "frontendServicePlanName": "[if(empty(parameters('frontendServicePlanName')), concat('HpcAcmSP-', uniqueString(resourceGroup().id, 'portal')), parameters('frontendServicePlanName'))]",
     "aadAuthIssuer": "[concat('https://sts.windows.net/', if(empty(parameters('aadTenantId')), subscription().tenantId, parameters('aadTenantId')), '/')]",
-    "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
-    "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), uniqueString(resourceGroup().id, 'portal'), tolower(parameters('portalDnsNameLabel')))]",
+    "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+    "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), concat('hpcacm', uniqueString(resourceGroup().id, 'portal')), tolower(parameters('portalDnsNameLabel')))]",
     "artifactsBaseUrl": "https://raw.githubusercontent.com/sunbinzhu/azure-hpc/master/Templates/hpc-cluster/"
   },
   "resources": [
@@ -506,7 +508,7 @@
         "name": "[parameters('storageAccountType')]"
       },
       "kind": "Storage",
-      "name": "[parameters('storageAccountName')]",
+      "name": "[variables('storageAccountName')]",
       "apiVersion": "2018-07-01",
       "location": "[parameters('location')]",
       "properties": {}
@@ -518,7 +520,7 @@
         "tier": "[parameters('frontendServiceSkuTier')]"
       },
       "kind": "linux",
-      "name": "[parameters('frontendServicePlanName')]",
+      "name": "[variables('frontendServicePlanName')]",
       "apiVersion": "2018-02-01",
       "location": "[parameters('location')]",
       "properties": {
@@ -533,13 +535,13 @@
       "location": "[parameters('location')]",
       "properties": {
         "enabled": true,
-        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('frontendServicePlanName'))]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('frontendServicePlanName'))]",
         "reserved": true,
         "siteConfig": {
           "appSettings": [
             {
               "name": "CloudOptions__Storage__AccountName",
-              "value": "[parameters('storageAccountName')]"
+              "value": "[variables('storageAccountName')]"
             },
             {
               "name": "WEBSITES_PORT",
@@ -554,12 +556,14 @@
             }
           ],
           "appCommandLine": "",
-          "linuxFxVersion": "[concat('DOCKER|', parameters('frontendImageName'))]"
+          "linuxFxVersion": "[concat('DOCKER|', parameters('frontendImageName'))]",
+          "ftpState": "Disabled",
+          "alwaysOn": true
         }
       },
       "dependsOn": [
-        "[concat('Microsoft.Web/serverfarms/', parameters('frontendServicePlanName'))]",
-        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+        "[concat('Microsoft.Web/serverfarms/', variables('frontendServicePlanName'))]",
+        "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
       ]
     },
     {
@@ -599,7 +603,7 @@
               "environmentVariables": [
                 {
                   "name": "CloudOptions__Storage__AccountName",
-                  "value": "[parameters('storageAccountName')]"
+                  "value": "[variables('storageAccountName')]"
                 },
                 {
                   "name": "CloudOptions__Storage__KeyValue",
@@ -622,7 +626,7 @@
               "environmentVariables": [
                 {
                   "name": "CloudOptions__Storage__AccountName",
-                  "value": "[parameters('storageAccountName')]"
+                  "value": "[variables('storageAccountName')]"
                 },
                 {
                   "name": "CloudOptions__Storage__KeyValue",
@@ -645,7 +649,7 @@
               "environmentVariables": [
                 {
                   "name": "CloudOptions__Storage__AccountName",
-                  "value": "[parameters('storageAccountName')]"
+                  "value": "[variables('storageAccountName')]"
                 },
                 {
                   "name": "CloudOptions__Storage__KeyValue",
@@ -659,7 +663,7 @@
         "restartPolicy": "OnFailure"
       },
       "dependsOn": [
-        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+        "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
       ]
     },
     {
@@ -729,7 +733,7 @@
             "value": "[parameters('clusterFilesystem')]"
           },
           "storageAccountName": {
-            "value": "[parameters('storageAccountName')]"
+            "value": "[variables('storageAccountName')]"
           },
           "_artifactsLocation": {
             "value": "[variables('artifactsBaseUrl')]"
@@ -740,7 +744,7 @@
         }
       },
       "dependsOn": [
-        "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]"
+        "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
       ]
     }
   ],
