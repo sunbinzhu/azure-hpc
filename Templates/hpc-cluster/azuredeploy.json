@@ -494,9 +494,7 @@
     }
   },
   "variables": {
-    "aadTenantId": "[if(empty(parameters('aadTenantId')), subscription().tenantId, parameters('aadTenantId'))]",
-    "aadAuthIssuer": "[if(empty(parameters('aadAuthApplicationId')), json('null'), concat('https://sts.windows.net/', variables('aadTenantId'), '/'))]",
-    "aadAuthClientId": "[if(empty(parameters('aadAuthApplicationId')), json('null'), parameters('aadAuthApplicationId'))]",
+    "aadAuthIssuer": "[concat('https://sts.windows.net/', if(empty(parameters('aadTenantId')), subscription().tenantId, parameters('aadTenantId')), '/')]",
     "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', parameters('storageAccountName'))]",
     "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), uniqueString(resourceGroup().id, 'portal'), tolower(parameters('portalDnsNameLabel')))]",
     "artifactsBaseUrl": "https://raw.githubusercontent.com/sunbinzhu/azure-hpc/master/Templates/hpc-cluster/"
@@ -573,8 +571,8 @@
         "enabled": true,
         "unauthenticatedClientAction": "RedirectToLoginPage",
         "defaultProvider": "AzureActiveDirectory",
-        "clientId": "[variables('aadAuthClientId')]",
-        "issuer": "[variables('aadAuthIssuer')]"
+        "clientId": "[if(empty(parameters('aadAuthApplicationId')), json('null'), parameters('aadAuthApplicationId'))]",
+        "issuer": "[if(empty(parameters('aadAuthApplicationId')), json('null'), variables('aadAuthIssuer'))]"
       },
       "dependsOn": [
         "[concat('Microsoft.Web/sites/', variables('portalDnsNameLabel'))]"
