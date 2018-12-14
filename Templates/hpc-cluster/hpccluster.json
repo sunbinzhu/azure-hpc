@@ -19,6 +19,7 @@
     "adminPassword": {
       "defaultValue": "",
       "type": "securestring",
+      "minLength": 12,
       "metadata": {
         "description": "Admin password. Pick a complex password with uppercase letters, lowercase letters, digits, and symbols. The password should not be longer than 16. Otherwise you'll get a BadRequest error."
       }

@@ -195,7 +195,7 @@
       }
     },
     "hpcNodeImage": {
-      "defaultValue": "OpenLogic:CentOS:7.3",
+      "defaultValue": "CentOS_7.3",
       "allowedValues": [
         "CentOS_7.1",
         "CentOS_7.3",
@@ -208,7 +208,7 @@
       ],
       "type": "string",
       "metadata": {
-        "description": "The OS image offer to use, eithe HPC with Intel MPI or the vanilla CentOS version."
+        "description": "The OS image offer to use, either HPC with Intel MPI or the vanilla CentOS version."
       }
     },
     "headNodeName": {
@@ -739,7 +739,7 @@
             "value": "[parameters('adminUserName')]"
           },
           "adminPassword": {
-            "value": "[parameters('adminPassword')]"
+            "value": "[if(equals(parameters('scheduler'), 'None'), uniqueString(resourceGroup().id), parameters('adminPassword'))]"
           },
           "hpcUserName": {
             "value": "[parameters('hpcUserName')]"
