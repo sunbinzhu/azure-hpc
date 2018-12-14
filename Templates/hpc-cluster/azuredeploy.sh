@@ -510,6 +510,8 @@ install_cfs()
     fi
 }
 
+# skip a repository if it is unavailable
+yum-config-manager --setopt=\*.skip_if_unavailable=1 --save > /dev/null
 install_pkgs
 setup_shares
 setup_hpc_user

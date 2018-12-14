@@ -450,7 +450,8 @@
         "settings": {}
       },
       "dependsOn": [
-        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'))]"
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'))]",
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'), '/extensions/Installation')]"
       ]
     },
     {
@@ -494,7 +495,8 @@
         "settings": {}
       },
       "dependsOn": [
-        "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex())]"
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex())]",
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex(), '/extensions/Installation')]"
       ]
     },
     {
