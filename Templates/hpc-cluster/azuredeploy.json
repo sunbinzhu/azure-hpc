@@ -2,6 +2,13 @@
   "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
+    "portalDnsNameLabel": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "The DNS name label. This label should be globally unique or leave empty then the deployment process will generate an unique string."
+      }
+    },
     "frontendServicePlanName": {
       "defaultValue": "",
       "type": "string",
@@ -21,13 +28,6 @@
       "type": "string",
       "metadata": {
         "description": "The sku tier of App service plan for the frontend service"
-      }
-    },
-    "portalDnsNameLabel": {
-      "defaultValue": "",
-      "type": "string",
-      "metadata": {
-        "description": "The DNS name label. This label should be globally unique or leave empty then the deployment process will generate an unique string."
       }
     },
     "aadAuthApplicationId": {
@@ -197,11 +197,14 @@
     "hpcNodeImage": {
       "defaultValue": "OpenLogic:CentOS:7.3",
       "allowedValues": [
-        "OpenLogic:CentOS-HPC:7.1",
-        "OpenLogic:CentOS-HPC:7.3",
-        "OpenLogic:CentOS:7.1",
-        "OpenLogic:CentOS:7.3",
-        "RedHat:RHEL:7.3"
+        "CentOS_7.1",
+        "CentOS_7.3",
+        "CentOS_7.4",
+        "CentOS_7.1_HPC",
+        "CentOS_7.3_HPC",
+        "CentOS_7.4_HPC",
+        "RHEL_7.3",
+        "RHEL_7.4"
       ],
       "type": "string",
       "metadata": {
@@ -500,6 +503,56 @@
     "aadAuthIssuer": "[concat('https://sts.windows.net/', if(empty(parameters('aadTenantId')), subscription().tenantId, parameters('aadTenantId')), '/')]",
     "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
     "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), concat('hpcacm', uniqueString(resourceGroup().id, 'portal')), tolower(parameters('portalDnsNameLabel')))]",
+    "linuxNodeImages": {
+      "CentOS_7.1": {
+        "publisher": "OpenLogic",
+        "offer": "CentOS",
+        "sku": "7.1",
+        "version": "latest"
+      },
+      "CentOS_7.3": {
+        "publisher": "OpenLogic",
+        "offer": "CentOS",
+        "sku": "7.3",
+        "version": "latest"
+      },
+      "CentOS_7.4": {
+        "publisher": "OpenLogic",
+        "offer": "CentOS",
+        "sku": "7.4",
+        "version": "latest"
+      },
+      "CentOS_7.1_HPC": {
+        "publisher": "OpenLogic",
+        "offer": "CentOS-HPC",
+        "sku": "7.1",
+        "version": "latest"
+      },
+      "CentOS_7.3_HPC": {
+        "publisher": "OpenLogic",
+        "offer": "CentOS-HPC",
+        "sku": "7.3",
+        "version": "latest"
+      },
+      "CentOS_7.4_HPC": {
+        "publisher": "OpenLogic",
+        "offer": "CentOS-HPC",
+        "sku": "7.4",
+        "version": "latest"
+      },
+      "RHEL_7.3": {
+        "publisher": "RedHat",
+        "offer": "RHEL",
+        "sku": "7.3",
+        "version": "latest"
+      },
+      "RHEL_7.4": {
+        "publisher": "RedHat",
+        "offer": "RHEL",
+        "sku": "7.4",
+        "version": "latest"
+      }
+    },
     "artifactsBaseUrl": "https://raw.githubusercontent.com/sunbinzhu/azure-hpc/master/Templates/hpc-cluster/"
   },
   "resources": [
@@ -692,7 +745,7 @@
             "value": "[parameters('hpcUserName')]"
           },
           "hpcNodeImage": {
-            "value": "[parameters('hpcNodeImage')]"
+            "value": "[variables('linuxNodeImages')[parameters('hpcNodeImage')]]"
           },
           "headNodeName": {
             "value": "[parameters('headNodeName')]"
@@ -736,7 +789,7 @@
           "storageAccountName": {
             "value": "[variables('storageAccountName')]"
           },
-          "_artifactsLocation": {
+          "scriptBaseLocation": {
             "value": "[variables('artifactsBaseUrl')]"
           },
           "location": {

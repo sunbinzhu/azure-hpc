@@ -11,21 +11,24 @@ fi
 echo "Script arguments: $@"
 
 if [ $# != 10 ]; then
-    echo "Usage: $0 <MasterHostname> <WorkerHostnamePrefix> <WorkerNodeCount> <HPCUserName> <TemplateBaseUrl> <ClusterFilesystem> <ClusterFilesystemStorage> <ImageOffer> <Scheduler> <InstallEasybuild>"
+    echo "Usage: $0 <MasterHostname> <WorkerHostnamePrefix> <WorkerNodeCount> <HPCUserName> <ClusterFilesystem> <ClusterFilesystemStorage> <ImageOffer> <Scheduler> <InstallEasybuild>"
     exit 1
 fi
+
+#Base directory of this script
+SCRIPT_BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Set user args
 MASTER_HOSTNAME=$1
 WORKER_HOSTNAME_PREFIX=$2
 WORKER_COUNT=$3
-TEMPLATE_BASE_URL="$5"
-CFS="$6" # None, BeeGFS
-CFS_STORAGE="$7" # None,Storage,SSD
+HPC_USER=$4
+CFS="$5" # None, BeeGFS
+CFS_STORAGE="$6" # None,Storage,SSD
 CFS_STORAGE_LOCATION="/data/beegfs/storage"
-IMAGE_OFFER="$8"
-SCHEDULER="$9"
-INSTALL_EASYBUILD="${10}"
+IMAGE_OFFER="$7"
+SCHEDULER="$8"
+INSTALL_EASYBUILD="$9"
 LAST_WORKER_INDEX=$(($WORKER_COUNT - 1))
 
 if [ "$CFS_STORAGE" == "Storage" ]; then
@@ -55,7 +58,6 @@ SLURM_VERSION=15-08-1-1
 SLURM_CONF_DIR=$SHARE_DATA/conf
 
 # Hpc User
-HPC_USER=$4
 HPC_UID=7007
 HPC_GROUP=hpc
 HPC_GID=7007
@@ -184,9 +186,9 @@ setup_shares()
         fi
 
         # Mount master NFS share
-        echo "master:$SHARE_NFS $SHARE_NFS    nfs4    rw,auto,_netdev 0 0" >> /etc/fstab
+        echo "$MASTER_HOSTNAME:$SHARE_NFS $SHARE_NFS    nfs4    rw,auto,_netdev 0 0" >> /etc/fstab
         mount -a
-        mount | grep "^master:$SHARE_HOME"
+        mount | grep "^$MASTER_HOSTNAME:$SHARE_HOME"
     fi
 }
 
@@ -242,12 +244,7 @@ install_slurm_config()
     if is_master; then
 
         mkdir -p $SLURM_CONF_DIR
-
-        if [ -e "$TEMPLATE_BASE_URL/slurm.template.conf" ]; then
-            cp "$TEMPLATE_BASE_URL/slurm.template.conf" .
-        else
-            wget "$TEMPLATE_BASE_URL/slurm.template.conf"
-        fi
+        cp "$SCRIPT_BASEDIR/slurm.template.conf" .
 
         cat slurm.template.conf |
         sed 's/__MASTER__/'"$MASTER_HOSTNAME"'/g' |
@@ -283,15 +280,13 @@ install_slurm()
     install_slurm_config
 
     if is_master; then
-        wget $TEMPLATE_BASE_URL/slurmctld.service
-        mv slurmctld.service /usr/lib/systemd/system
+        cp "$SCRIPT_BASEDIR/slurmctld.service" /usr/lib/systemd/system
         systemctl daemon-reload
         systemctl enable slurmctld
         systemctl start slurmctld
         systemctl status slurmctld
     else
-        wget $TEMPLATE_BASE_URL/slurmd.service
-        mv slurmd.service /usr/lib/systemd/system
+        cp "$SCRIPT_BASEDIR/slurmd.service" /usr/lib/systemd/system
         systemctl daemon-reload
         systemctl enable slurmd
         systemctl start slurmd
