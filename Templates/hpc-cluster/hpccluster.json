@@ -372,9 +372,9 @@
       "apiVersion": "2018-10-01",
       "location": "[parameters('location')]",
       "properties": {
-        "publisher": "Microsoft.OSTCExtensions",
-        "type": "CustomScriptForLinux",
-        "typeHandlerVersion": "1.3",
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.0",
         "settings": {
           "fileUris": "[variables('installFileUris')]",
           "commandToExecute": "[variables('installationCLI')]"
@@ -410,9 +410,9 @@
         "count": "[parameters('workerNodeCount')]"
       },
       "properties": {
-        "publisher": "Microsoft.OSTCExtensions",
-        "type": "CustomScriptForLinux",
-        "typeHandlerVersion": "1.3",
+        "publisher": "Microsoft.Azure.Extensions",
+        "type": "CustomScript",
+        "typeHandlerVersion": "2.0",
         "settings": {
           "fileUris": "[variables('installFileUris')]",
           "commandToExecute": "[variables('installationCLI')]"
