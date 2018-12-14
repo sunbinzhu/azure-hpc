@@ -200,7 +200,8 @@
         "OpenLogic:CentOS-HPC:7.1",
         "OpenLogic:CentOS-HPC:7.3",
         "OpenLogic:CentOS:7.1",
-        "OpenLogic:CentOS:7.3"
+        "OpenLogic:CentOS:7.3",
+        "RedHat:RHEL:7.3"
       ],
       "type": "string",
       "metadata": {

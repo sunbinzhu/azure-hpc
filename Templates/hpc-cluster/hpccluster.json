@@ -36,13 +36,7 @@
       }
     },
     "hpcNodeImage": {
-      "defaultValue": "OpenLogic:CentOS-HPC:7.3",
-      "allowedValues": [
-        "OpenLogic:CentOS-HPC:7.1",
-        "OpenLogic:CentOS-HPC:7.3",
-        "OpenLogic:CentOS:7.1",
-        "OpenLogic:CentOS:7.3"
-      ],
+      "defaultValue": "OpenLogic:CentOS:7.3",
       "type": "string",
       "metadata": {
         "description": "The OS image offer to use, eithe HPC with Intel MPI or the vanilla CentOS version."
