@@ -206,7 +206,7 @@
       "[uri(parameters('scriptBaseLocation'), concat('slurmctld.service', parameters('scriptBaseLocationSasToken')))]",
       "[uri(parameters('scriptBaseLocation'), concat('slurmd.service', parameters('scriptBaseLocationSasToken')))]"
     ],
-    "installationCLI": "[concat('bash azuredeploy.sh ', parameters('headNodeName'), ' ', parameters('workerNodeNamePrefix'), ' ', parameters('workerNodeCount'), ' ', parameters('hpcUserName'), variables('clusterFilesystem'), ' ', variables('clusterFilesystemStorageLocation'), ' ', parameters('hpcNodeImage').offer, ' ', parameters('scheduler'), ' ', parameters('installEasybuild'))]"
+    "installationCLI": "[concat('bash azuredeploy.sh ', parameters('headNodeName'), ' ', parameters('workerNodeNamePrefix'), ' ', parameters('workerNodeCount'), ' ', parameters('hpcUserName'), ' ', variables('clusterFilesystem'), ' ', variables('clusterFilesystemStorageLocation'), ' ', parameters('hpcNodeImage').offer, ' ', parameters('scheduler'), ' ', parameters('installEasybuild'))]"
   },
   "resources": [
     {
