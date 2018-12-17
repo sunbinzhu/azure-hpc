@@ -514,5 +514,5 @@ install_cfs
 install_scheduler
 setup_env
 install_easybuild
-shutdown -r +3 &
+shutdown -r +1 &
 exit 0

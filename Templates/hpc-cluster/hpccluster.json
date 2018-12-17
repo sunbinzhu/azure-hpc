@@ -382,7 +382,8 @@
         }
       },
       "dependsOn": [
-        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'))]"
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'))]",
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'), '/extensions/HpcAcmAgent')]"
       ]
     },
     {
@@ -397,8 +398,7 @@
         "settings": {}
       },
       "dependsOn": [
-        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'))]",
-        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'), '/extensions/Installation')]"
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'))]"
       ]
     },
     {
@@ -421,7 +421,8 @@
       },
       "dependsOn": [
         "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'), '/extensions/Installation')]",
-        "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex())]"
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex())]",
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex(), '/extensions/HpcAcmAgent')]"
       ]
     },
     {
@@ -440,8 +441,7 @@
         "settings": {}
       },
       "dependsOn": [
-        "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex())]",
-        "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex(), '/extensions/Installation')]"
+        "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex())]"
       ]
     },
     {
