@@ -45,7 +45,7 @@
       }
     },
     "headNodeSize": {
-      "defaultValue": "Standard_DS4_v2",
+      "defaultValue": "Standard_D4_v2",
       "type": "string",
       "metadata": {
         "description": "Size of the head node."
@@ -87,14 +87,14 @@
       }
     },
     "headNodeDataDiskCount": {
-      "defaultValue": 2,
+      "defaultValue": 0,
       "type": "int",
       "metadata": {
         "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
       }
     },
     "workerNodeDataDiskCount": {
-      "defaultValue": 1,
+      "defaultValue": 0,
       "type": "int",
       "metadata": {
         "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
@@ -115,7 +115,7 @@
       }
     },
     "dataDiskSize": {
-      "defaultValue": 32,
+      "defaultValue": 128,
       "type": "int",
       "metadata": {
         "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
@@ -195,6 +195,39 @@
       }
     },
     "headNodeNicName": "[concat('nic-', parameters('headNodeName'))]",
+    "emptyArray": [],
+    "headNodeDataDisks": {
+      "copy": [
+        {
+          "name": "hnDataDisks",
+          "count": "[if(equals(parameters('headNodeDataDiskCount'), 0), 1, parameters('headNodeDataDiskCount'))]",
+          "input": {
+            "lun": "[copyIndex('hnDatadisks')]",
+            "createOption": "Empty",
+            "diskSizeGB": "[parameters('dataDiskSize')]",
+            "managedDisk": {
+              "storageAccountType": "[parameters('headNodeDataDiskType')]"
+            }
+          }
+        }
+      ]
+    },
+    "workerNodeDataDisks": {
+      "copy": [
+        {
+          "name": "wnDatadisks",
+          "count": "[if(equals(parameters('workerNodeDataDiskCount'), 0), 1, parameters('workerNodeDataDiskCount'))]",
+          "input": {
+            "lun": "[copyIndex('wnDatadisks')]",
+            "createOption": "Empty",
+            "diskSizeGB": "[parameters('dataDiskSize')]",
+            "managedDisk": {
+              "storageAccountType": "[parameters('workerNodeDataDiskType')]"
+            }
+          }
+        }
+      ]
+    },
     "workerNodeNicNamePrefix": "[concat('nic-', parameters('workerNodeNamePrefix'))]",
     "clusterFilesystem": "[split(parameters('clusterFilesystem'), ':')[0]]",
     "clusterFilesystemStorageLocation": "[split(parameters('clusterFilesystem'), ':')[1]]",
@@ -338,21 +371,7 @@
               "storageAccountType": "[parameters('headNodeOsDiskType')]"
             }
           },
-          "copy": [
-            {
-              "name": "dataDisks",
-              "count": "[parameters('headNodeDataDiskCount')]",
-              "input": {
-                "name": "[concat(parameters('headNodeName'), '_DataDisk_', copyIndex('dataDisks'))]",
-                "lun": "[copyIndex('dataDisks')]",
-                "createOption": "Empty",
-                "diskSizeGB": "[parameters('dataDiskSize')]",
-                "managedDisk": {
-                  "storageAccountType": "[parameters('headNodeDataDiskType')]"
-                }
-              }
-            }
-          ]
+          "dataDisks": "[if(equals(parameters('headNodeDataDiskCount'), 0), variables('emptyArray'), variables('headNodeDataDisks').hnDataDisks)]"
         },
         "networkProfile": {
           "networkInterfaces": [
@@ -536,21 +555,7 @@
               "storageAccountType": "[parameters('workerNodeOsDiskType')]"
             }
           },
-          "copy": [
-            {
-              "name": "dataDisks",
-              "count": "[parameters('workerNodeDataDiskCount')]",
-              "input": {
-                "name": "[concat(parameters('workerNodeNamePrefix'), copyindex(), '_DataDisk_', copyIndex('dataDisks'))]",
-                "lun": "[copyIndex('dataDisks')]",
-                "createOption": "Empty",
-                "diskSizeGB": "[parameters('dataDiskSize')]",
-                "managedDisk": {
-                  "storageAccountType": "[parameters('workerNodeDataDiskType')]"
-                }
-              }
-            }
-          ]
+          "dataDisks": "[if(equals(parameters('workerNodeDataDiskCount'), 0), variables('emptyArray'), variables('workerNodeDataDisks').wnDataDisks)]"
         },
         "networkProfile": {
           "networkInterfaces": [

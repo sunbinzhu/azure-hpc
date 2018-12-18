@@ -451,16 +451,7 @@
       }
     },
     "dataDiskSize": {
-      "defaultValue": 32,
-      "allowedValues": [
-        32,
-        64,
-        128,
-        512,
-        1024,
-        2048,
-        4095
-      ],
+      "defaultValue": 128,
       "type": "int",
       "metadata": {
         "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
