@@ -26,6 +26,17 @@
         "description": "The sku name of App service plan for the frontend service"
       }
     },
+    "portalAnonymousAccess": {
+      "type": "string",
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "metadata": {
+        "description": "Specify whether you want to enable the anonymous access for the ACM portal. Choose 'Yes' only for testing purpose."
+      }
+    },
     "aadAuthApplicationId": {
       "defaultValue": "",
       "type": "string",
@@ -439,11 +450,10 @@
     }
   },
   "variables": {
-    "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), concat('hpcacm', uniqueString(resourceGroup().id, 'portal')), tolower(parameters('portalDnsNameLabel')))]",
     "frontendServicePlanSkuParts": "[split(parameters('frontendServiceSku'), ' ')]",
     "appServicePlanSku": {
       "name": "[variables('frontendServicePlanSkuParts')[0]]",
-      "sku": "[variables('frontendServicePlanSkuParts')[1]]"
+      "tier": "[variables('frontendServicePlanSkuParts')[1]]"
     },
     "linuxNodeImages": {
       "CentOS_7.1": {
@@ -510,10 +520,13 @@
         },
         "parameters": {
           "portalDnsNameLabel": {
-            "value": "[variables('portalDnsNameLabel')]"
+            "value": "[parameters('portalDnsNameLabel')]"
           },
           "appServicePlanPricingTier": {
             "value": "[variables('appServicePlanSku')]"
+          },
+          "portalAnonymousAccess": {
+            "value": "[equals(parameters('portalAnonymousAccess'), 'Yes')]"
           },
           "aadAuthApplicationId": {
             "value": "[parameters('aadAuthApplicationId')]"

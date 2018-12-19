@@ -26,6 +26,13 @@
         "description": "The pricing tier of App service plan for the frontend service"
       }
     },
+    "portalAnonymousAccess": {
+      "defaultValue": false,
+      "type": "bool",
+      "metadata": {
+        "description": "Specify whether to enable AAD authentication for portal App service"
+      }
+    },
     "aadAuthApplicationId": {
       "defaultValue": "",
       "type": "string",
@@ -450,6 +457,7 @@
       ]
     },
     {
+      "condition": "[not(parameters('portalAnonymousAccess'))]",
       "type": "Microsoft.Web/sites/config",
       "name": "[concat(variables('portalDnsNameLabel'), '/authsettings')]",
       "apiVersion": "2018-02-01",
