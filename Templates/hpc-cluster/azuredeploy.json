@@ -618,7 +618,7 @@
   "outputs": {
     "portalUri": {
       "type": "string",
-      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', variables('portalDnsNameLabel'))).defaultHostName, '/')]"
+      "value": "[reference('mainTemplate').outputs.portalUri.value]"
     }
   }
 }
