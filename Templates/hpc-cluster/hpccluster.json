@@ -19,9 +19,15 @@
     "adminPassword": {
       "defaultValue": "",
       "type": "securestring",
-      "minLength": 12,
       "metadata": {
-        "description": "Admin password. Pick a complex password with uppercase letters, lowercase letters, digits, and symbols. The password should not be longer than 16. Otherwise you'll get a BadRequest error."
+        "description": "Admin password. Pick a complex password with uppercase letters, lowercase letters, digits, and symbols."
+      }
+    },
+    "adminSshPublicKey": {
+      "defaultValue": "",
+      "type": "securestring",
+      "metadata": {
+        "description": "The ssh public key string for the Admin user"
       }
     },
     "hpcUserName": {
@@ -285,6 +291,18 @@
         }
       ]
     },
+    "sshKeyPath": "[concat('/home/',parameters('adminUsername'),'/.ssh/authorized_keys')]",
+    "linuxConfiguration": {
+      "disablePasswordAuthentication": "[empty(parameters('adminPassword'))]",
+      "ssh": {
+        "publicKeys": [
+          {
+            "path": "[variables('sshKeyPath')]",
+            "keyData": "[parameters('adminSshPublicKey')]"
+          }
+        ]
+      }
+    },
     "workerNodeNicNamePrefix": "[concat('nic-', parameters('workerNodeNamePrefix'))]",
     "clusterFilesystem": "[split(parameters('clusterFilesystem'), ':')[0]]",
     "clusterFilesystemStorageLocation": "[split(parameters('clusterFilesystem'), ':')[1]]",
@@ -423,7 +441,8 @@
         "osProfile": {
           "computername": "[parameters('headNodeName')]",
           "adminUsername": "[parameters('adminUsername')]",
-          "adminPassword": "[parameters('adminPassword')]"
+          "adminPassword": "[if(empty(parameters('adminPassword')), json('null'), parameters('adminPassword'))]",
+          "linuxConfiguration": "[if(empty(parameters('adminSshPublicKey')), json('null'), variables('linuxConfiguration'))]"
         },
         "storageProfile": {
           "imageReference": "[parameters('hpcNodeImage')]",
@@ -607,7 +626,8 @@
         "osProfile": {
           "computername": "[concat(parameters('workerNodeNamePrefix'), copyindex())]",
           "adminUsername": "[parameters('adminUsername')]",
-          "adminPassword": "[parameters('adminPassword')]"
+          "adminPassword": "[if(empty(parameters('adminPassword')), json('null'), parameters('adminPassword'))]",
+          "linuxConfiguration": "[if(empty(parameters('adminSshPublicKey')), json('null'), variables('linuxConfiguration'))]"
         },
         "storageProfile": {
           "imageReference": "[parameters('hpcNodeImage')]",

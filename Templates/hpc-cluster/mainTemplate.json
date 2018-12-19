@@ -190,6 +190,13 @@
         "description": "Admin password. Pick a complex password with uppercase letters, lowercase letters, digits, and symbols. The password should not be longer than 16. Otherwise you'll get a BadRequest error."
       }
     },
+    "adminSshPublicKey": {
+      "defaultValue": "",
+      "type": "securestring",
+      "metadata": {
+        "description": "An RSA public key for the admin user."
+      }
+    },
     "hpcUserName": {
       "defaultValue": "hpcuser",
       "type": "string",
@@ -576,7 +583,10 @@
             "value": "[parameters('adminUserName')]"
           },
           "adminPassword": {
-            "value": "[if(equals(parameters('scheduler'), 'None'), uniqueString(resourceGroup().id), parameters('adminPassword'))]"
+            "value": "parameters('adminPassword')]"
+          },
+          "adminSshPublicKey": {
+            "value": "parameters('adminSshPublicKey')"
           },
           "hpcUserName": {
             "value": "[parameters('hpcUserName')]"

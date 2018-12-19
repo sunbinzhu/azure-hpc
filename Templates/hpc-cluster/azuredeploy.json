@@ -455,6 +455,7 @@
       "name": "[variables('frontendServicePlanSkuParts')[0]]",
       "tier": "[variables('frontendServicePlanSkuParts')[1]]"
     },
+    "adminPassword": "[if(and(not(equals(parameters('scheduler'), 'None')), empty(parameters('adminPassword'))), json('null'), parameters('adminPassword'))]",
     "linuxNodeImages": {
       "CentOS_7.1": {
         "publisher": "OpenLogic",
@@ -571,7 +572,7 @@
             "value": "[parameters('adminUserName')]"
           },
           "adminPassword": {
-            "value": "[if(equals(parameters('scheduler'), 'None'), uniqueString(resourceGroup().id), parameters('adminPassword'))]"
+            "value": "[parameters('adminPassword')]"
           },
           "hpcUserName": {
             "value": "[parameters('hpcUserName')]"
