@@ -229,6 +229,9 @@
   "variables": {
     "nsgName": "[concat(parameters('headNodeName'), '-nsg')]",
     "publicIPAddressName": "[if(empty(parameters('publicIPName')), concat(parameters('headNodeName'), '-publicip'), parameters('publicIPName'))]",
+    "publicIPDnsSettings": {
+      "domainNameLabel": "[parameters('publicIPDNSNameLabel')]"
+    },
     "avSetName": "[concat(parameters('headNodeName'), '-avSet')]",
     "networkSettings": {
       "virtualNetworkName": "[concat(parameters('headNodeName'), '-VNet')]",
@@ -341,9 +344,7 @@
       },
       "properties": {
         "publicIPAllocationMethod": "[parameters('publicIPAllocationMethod')]",
-        "dnsSettings": {
-          "domainNameLabel": "[if(empty(parameters('publicIPDNSNameLabel')), json('null'), parameters('publicIPDNSNameLabel'))]"
-        }
+        "dnsSettings": "[if(empty(parameters('publicIPDNSNameLabel')), json('null'), variables('publicIPDnsSettings'))]"
       }
     },
     {
