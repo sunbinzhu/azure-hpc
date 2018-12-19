@@ -1,0 +1,661 @@
+﻿{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "portalDnsNameLabel": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "The DNS name label. This label should be globally unique or leave empty then the deployment process will generate an unique string."
+      }
+    },
+    "appServicePlanName": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "The name of App service plan for the frontend service, will be automatically generated if not specified"
+      }
+    },
+    "appServicePlanPricingTier": {
+      "defaultValue": {
+        "name": "S1",
+        "tier": "Standard"
+      },
+      "type": "object",
+      "metadata": {
+        "description": "The pricing tier of App service plan for the frontend service"
+      }
+    },
+    "aadAuthApplicationId": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "The existing authentication application Id used to logon the portal if specified"
+      }
+    },
+    "aadTenantId": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "The Id of the tenant in which the authentication application locates. If not specified, the current tenantId is used"
+      }
+    },
+    "storageAccountType": {
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_ZRS"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Storage Account type"
+      }
+    },
+    "storageAccountName": {
+      "defaultValue": "[uniquestring(resourceGroup().id, 'storage')]",
+      "type": "string",
+      "metadata": {
+        "description": "Storage Account Name"
+      }
+    },
+    "frontendImageName": {
+      "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:frontend",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the frontend image"
+      }
+    },
+    "backendGroupName": {
+      "defaultValue": "hpcacmbackendgroup",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the backend container group"
+      }
+    },
+    "jobMonitorInstanceName": {
+      "defaultValue": "jobmonitor",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the jobmonitor container instance"
+      }
+    },
+    "jobMonitorImageName": {
+      "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:jobmonitor",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the jobmonitor image"
+      }
+    },
+    "jobMonitorCpuCores": {
+      "defaultValue": "1.0",
+      "type": "string",
+      "metadata": {
+        "description": "The number of CPU cores to allocate to the jobmonitor container instance."
+      }
+    },
+    "jobMonitorMemoryInGb": {
+      "defaultValue": "1.5",
+      "type": "string",
+      "metadata": {
+        "description": "The amount of memory in GB to allocate to the jobmonitor container instance."
+      }
+    },
+    "taskDispatcherInstanceName": {
+      "defaultValue": "taskdispatcher",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the taskdispatcher container instance"
+      }
+    },
+    "taskDispatcherImageName": {
+      "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:taskdispatcher",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the taskdispatcher image"
+      }
+    },
+    "taskDispatcherCpuCores": {
+      "defaultValue": "1.0",
+      "type": "string",
+      "metadata": {
+        "description": "The number of CPU cores to allocate to the taskDispatcher container instance."
+      }
+    },
+    "taskDispatcherMemoryInGb": {
+      "defaultValue": "1.5",
+      "type": "string",
+      "metadata": {
+        "description": "The amount of memory in GB to allocate to the taskDispatcher container instance."
+      }
+    },
+    "dashboardInstanceName": {
+      "defaultValue": "dashboard",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the dashboard container instance"
+      }
+    },
+    "dashboardImageName": {
+      "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:dashboard",
+      "type": "string",
+      "metadata": {
+        "description": "Name for the dashboard image"
+      }
+    },
+    "dashboardCpuCores": {
+      "defaultValue": "1.0",
+      "type": "string",
+      "metadata": {
+        "description": "The number of CPU cores to allocate to the dashboard container instance."
+      }
+    },
+    "dashboardMemoryInGb": {
+      "defaultValue": "1.5",
+      "type": "string",
+      "metadata": {
+        "description": "The amount of memory in GB to allocate to the dashboard container instance."
+      }
+    },
+    "scheduler": {
+      "defaultValue": "None",
+      "allowedValues": [
+        "Slurm",
+        "PBSPro-OSS",
+        "None"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "HPC scheduler to install."
+      }
+    },
+    "adminUserName": {
+      "defaultValue": "azureuser",
+      "type": "string",
+      "metadata": {
+        "description": "User name for the Virtual Machine. Pick a valid username otherwise there will be a BadRequest error."
+      }
+    },
+    "adminPassword": {
+      "defaultValue": "",
+      "type": "securestring",
+      "metadata": {
+        "description": "Admin password. Pick a complex password with uppercase letters, lowercase letters, digits, and symbols. The password should not be longer than 16. Otherwise you'll get a BadRequest error."
+      }
+    },
+    "hpcUserName": {
+      "defaultValue": "hpcuser",
+      "type": "string",
+      "metadata": {
+        "description": "User for running HPC applications with shared home directory and SSH public key authentication setup.  This user cannot login from outside the cluster. Pick a valid username otherwise there will be a BadRequest error."
+      }
+    },
+    "hpcNodeImage": {
+      "defaultValue": {},
+      "type": "object",
+      "metadata": {
+        "description": "The OS image offer to use, either HPC with Intel MPI or the vanilla CentOS version."
+      }
+    },
+    "headNodeName": {
+      "defaultValue": "master",
+      "type": "string",
+      "metadata": {
+        "description": "The VM name of head node."
+      }
+    },
+    "headNodeSize": {
+      "defaultValue": "Standard_D4_v2",
+      "type": "string",
+      "metadata": {
+        "description": "Size of the head node."
+      }
+    },
+    "headNodeOsDiskType": {
+      "defaultValue": "Standard_LRS",
+      "type": "string",
+      "metadata": {
+        "description": "Head node OS Disk Account type"
+      }
+    },
+    "workerNodeNamePrefix": {
+      "defaultValue": "worker",
+      "type": "string",
+      "metadata": {
+        "description": "The VM name prefix of the work nodes."
+      }
+    },
+    "workerNodeSize": {
+      "defaultValue": "Standard_D2_v2",
+      "type": "string",
+      "metadata": {
+        "description": "Size of the worker nodes."
+      }
+    },
+    "workerNodeOsDiskType": {
+      "defaultValue": "Standard_LRS",
+      "type": "string",
+      "metadata": {
+        "description": "Head node OS Disk Account type"
+      }
+    },
+    "workerNodeCount": {
+      "defaultValue": 2,
+      "type": "int",
+      "metadata": {
+        "description": "This template creates N worker node. Use workerNodeCount to specify that N."
+      }
+    },
+    "dataDiskSize": {
+      "defaultValue": 128,
+      "type": "int",
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+      }
+    },
+    "headNodeDataDiskCount": {
+      "defaultValue": 0,
+      "type": "int",
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+      }
+    },
+    "headNodeDataDiskType": {
+      "defaultValue": "Standard_LRS",
+      "type": "string",
+      "metadata": {
+        "description": "Head node Data Disk Account type"
+      }
+    },
+    "workerNodeDataDiskCount": {
+      "defaultValue": 0,
+      "type": "int",
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+      }
+    },
+    "workerNodeDataDiskType": {
+      "defaultValue": "Standard_LRS",
+      "type": "string",
+      "metadata": {
+        "description": "Head node OS Disk Account type"
+      }
+    },
+    "clusterFilesystem": {
+      "defaultValue": "None:None",
+      "allowedValues": [
+        "BeeGFS:Storage",
+        "BeeGFS:SSD",
+        "None:None"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Path to use for BeeGFS storage."
+      }
+    },
+    "installEasybuild": {
+      "defaultValue": "No",
+      "allowedValues": [
+        "Yes",
+        "No"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Install the EasyBuild framework."
+      }
+    },
+    "publicIPCreateOption": {
+      "type": "string",
+      "defaultValue": "new",
+      "allowedValues": [
+        "none",
+        "new",
+        "existing"
+      ],
+      "metadata": {
+        "description": "Indicates whether to create the public IP address"
+      }
+    },
+    "publicIPResourceGroupName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource group for the public IP address resource, shall be specified only when 'publicIPCreateOption' is specified as 'existing'"
+      }
+    },
+    "publicIPName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "The name of the public IP address, used only when 'publicIPCreateOption' is specified as 'existing' or 'new'"
+      }
+    },
+    "publicIPSku": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "allowedValues": [
+        "Basic",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "The sku of the public IP address, used only when 'publicIPCreateOption' is specified as 'new'"
+      }
+    },
+    "publicIPDNSNameLabel": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "The DNS name label of the public IP address, used only when 'publicIPCreateOption' is specified as 'new'"
+      }
+    },
+    "publicIPAllocationMethod": {
+      "type": "string",
+      "defaultValue": "Dynamic",
+      "allowedValues": [
+        "Dynamic",
+        "Static"
+      ],
+      "metadata": {
+        "description": "The IP allocation method for the public IP address"
+      }
+    },
+    "location": {
+      "defaultValue": "[resourceGroup().location]",
+      "type": "string",
+      "metadata": {
+        "description": "Location for all resources."
+      }
+    },
+    "_artifactsLocation": {
+      "type": "string",
+      "metadata": {
+        "description": "The base URI where artifacts (nested templates or scripts) required by this template are located."
+      }
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "The sasToken required to access _artifactsLocation."
+      }
+    }
+  },
+  "variables": {
+    "storageAccountName": "[if(empty(parameters('storageAccountName')), uniqueString(resourceGroup().id, 'storage'), tolower(parameters('storageAccountName')))]",
+    "frontendServicePlanName": "[if(empty(parameters('appServicePlanName')), concat('HpcAcmSP-', uniqueString(resourceGroup().id, 'portal')), parameters('appServicePlanName'))]",
+    "aadAuthIssuer": "[concat('https://sts.windows.net/', if(empty(parameters('aadTenantId')), subscription().tenantId, parameters('aadTenantId')), '/')]",
+    "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+    "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), concat('hpcacm', uniqueString(resourceGroup().id, 'portal')), tolower(parameters('portalDnsNameLabel')))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "sku": {
+        "name": "[parameters('storageAccountType')]"
+      },
+      "kind": "Storage",
+      "name": "[variables('storageAccountName')]",
+      "apiVersion": "2018-07-01",
+      "location": "[parameters('location')]",
+      "properties": {}
+    },
+    {
+      "type": "Microsoft.Web/serverfarms",
+      "sku": "[parameters('appServicePlanPricingTier')]",
+      "kind": "linux",
+      "name": "[variables('frontendServicePlanName')]",
+      "apiVersion": "2018-02-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "reserved": true,
+        "numberOfWorkers": "1"
+      }
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "name": "[variables('portalDnsNameLabel')]",
+      "apiVersion": "2018-02-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('frontendServicePlanName'))]",
+        "reserved": true,
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "CloudOptions__Storage__AccountName",
+              "value": "[variables('storageAccountName')]"
+            },
+            {
+              "name": "WEBSITES_PORT",
+              "value": "5000"
+            }
+          ],
+          "connectionStrings": [
+            {
+              "name": "CloudOptions__Storage__KeyValue",
+              "connectionString": "[listKeys(variables('storageAccountId'), '2018-07-01').keys[0].value]",
+              "type": "Custom"
+            }
+          ],
+          "appCommandLine": "",
+          "linuxFxVersion": "[concat('DOCKER|', parameters('frontendImageName'))]",
+          "ftpState": "Disabled",
+          "alwaysOn": true
+        }
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Web/serverfarms/', variables('frontendServicePlanName'))]",
+        "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites/config",
+      "name": "[concat(variables('portalDnsNameLabel'), '/authsettings')]",
+      "apiVersion": "2018-02-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "enabled": true,
+        "unauthenticatedClientAction": "RedirectToLoginPage",
+        "defaultProvider": "AzureActiveDirectory",
+        "clientId": "[if(empty(parameters('aadAuthApplicationId')), json('null'), parameters('aadAuthApplicationId'))]",
+        "issuer": "[if(empty(parameters('aadAuthApplicationId')), json('null'), variables('aadAuthIssuer'))]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Web/sites/', variables('portalDnsNameLabel'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "name": "[parameters('backendGroupName')]",
+      "apiVersion": "2018-10-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "containers": [
+          {
+            "name": "[parameters('dashboardInstanceName')]",
+            "properties": {
+              "command": [],
+              "image": "[parameters('dashboardImageName')]",
+              "resources": {
+                "requests": {
+                  "cpu": "[parameters('dashboardCpuCores')]",
+                  "memoryInGB": "[parameters('dashboardMemoryInGb')]"
+                }
+              },
+              "environmentVariables": [
+                {
+                  "name": "CloudOptions__Storage__AccountName",
+                  "value": "[variables('storageAccountName')]"
+                },
+                {
+                  "name": "CloudOptions__Storage__KeyValue",
+                  "secureValue": "[listKeys(variables('storageAccountId'), '2018-07-01').keys[0].value]"
+                }
+              ]
+            }
+          },
+          {
+            "name": "[parameters('taskDispatcherInstanceName')]",
+            "properties": {
+              "command": [],
+              "image": "[parameters('taskDispatcherImageName')]",
+              "resources": {
+                "requests": {
+                  "cpu": "[parameters('taskDispatcherCpuCores')]",
+                  "memoryInGB": "[parameters('taskDispatcherMemoryInGb')]"
+                }
+              },
+              "environmentVariables": [
+                {
+                  "name": "CloudOptions__Storage__AccountName",
+                  "value": "[variables('storageAccountName')]"
+                },
+                {
+                  "name": "CloudOptions__Storage__KeyValue",
+                  "secureValue": "[listKeys(variables('storageAccountId'), '2018-07-01').keys[0].value]"
+                }
+              ]
+            }
+          },
+          {
+            "name": "[parameters('jobMonitorInstanceName')]",
+            "properties": {
+              "command": [],
+              "image": "[parameters('jobMonitorImageName')]",
+              "resources": {
+                "requests": {
+                  "cpu": "[parameters('jobMonitorCpuCores')]",
+                  "memoryInGB": "[parameters('jobMonitorMemoryInGb')]"
+                }
+              },
+              "environmentVariables": [
+                {
+                  "name": "CloudOptions__Storage__AccountName",
+                  "value": "[variables('storageAccountName')]"
+                },
+                {
+                  "name": "CloudOptions__Storage__KeyValue",
+                  "secureValue": "[listKeys(variables('storageAccountId'), '2018-07-01').keys[0].value]"
+                }
+              ]
+            }
+          }
+        ],
+        "osType": "Linux",
+        "restartPolicy": "OnFailure"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "condition": "[not(equals(parameters('scheduler'), 'None'))]",
+      "apiVersion": "2018-05-01",
+      "type": "Microsoft.Resources/deployments",
+      "name": "deployHpcCluster",
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[uri(parameters('_artifactsLocation'), concat('hpccluster.json', parameters('_artifactsLocationSasToken')))]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "scheduler": {
+            "value": "[parameters('scheduler')]"
+          },
+          "adminUserName": {
+            "value": "[parameters('adminUserName')]"
+          },
+          "adminPassword": {
+            "value": "[if(equals(parameters('scheduler'), 'None'), uniqueString(resourceGroup().id), parameters('adminPassword'))]"
+          },
+          "hpcUserName": {
+            "value": "[parameters('hpcUserName')]"
+          },
+          "hpcNodeImage": {
+            "value": "[parameters('hpcNodeImage')]"
+          },
+          "headNodeName": {
+            "value": "[parameters('headNodeName')]"
+          },
+          "headNodeSize": {
+            "value": "[parameters('headNodeSize')]"
+          },
+          "headNodeOsDiskType": {
+            "value": "[parameters('headNodeOsDiskType')]"
+          },
+          "headNodeDataDiskType": {
+            "value": "[parameters('headNodeDataDiskType')]"
+          },
+          "workerNodeNamePrefix": {
+            "value": "[parameters('workerNodeNamePrefix')]"
+          },
+          "workerNodeSize": {
+            "value": "[parameters('workerNodeSize')]"
+          },
+          "workerNodeCount": {
+            "value": "[parameters('workerNodeCount')]"
+          },
+          "workerNodeDataDiskCount": {
+            "value": "[parameters('workerNodeDataDiskCount')]"
+          },
+          "workerNodeOsDiskType": {
+            "value": "[parameters('workerNodeOsDiskType')]"
+          },
+          "workerNodeDataDiskType": {
+            "value": "[parameters('workerNodeDataDiskType')]"
+          },
+          "dataDiskSize": {
+            "value": "[parameters('dataDiskSize')]"
+          },
+          "installEasybuild": {
+            "value": "[parameters('installEasybuild')]"
+          },
+          "clusterFilesystem": {
+            "value": "[parameters('clusterFilesystem')]"
+          },
+          "storageAccountName": {
+            "value": "[variables('storageAccountName')]"
+          },
+          "publicIPCreateOption": {
+            "value": "[parameters('publicIPCreateOption')]"
+          },
+          "publicIPResourceGroupName": {
+            "value": "[parameters('publicIPResourceGroupName')]"
+          },
+          "publicIPName": {
+            "value": "[parameters('publicIPName')]"
+          },
+          "publicIPSku": {
+            "value": "[parameters('publicIPSku')]"
+          },
+          "publicIPDNSNameLabel": {
+            "value": "[parameters('publicIPDNSNameLabel')]"
+          },
+          "publicIPAllocationMethod": {
+            "value": "[parameters('publicIPAllocationMethod')]"
+          },
+          "scriptBaseLocation": {
+            "value": "[parameters('_artifactsLocation')]"
+          },
+          "scriptBaseLocationSasToken": {
+            "value": "[parameters('_artifactsLocationSasToken')]"
+          },
+          "location": {
+            "value": "[parameters('location')]"
+          }
+        }
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Storage/storageAccounts/', variables('storageAccountName'))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "portalUri": {
+      "type": "string",
+      "value": "[concat('https://', reference(resourceId('Microsoft.Web/sites', variables('portalDnsNameLabel'))).defaultHostName, '/')]"
+    }
+  }
+}

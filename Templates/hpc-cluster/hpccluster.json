@@ -150,6 +150,61 @@
         "description": "Storage Account Name"
       }
     },
+    "publicIPCreateOption": {
+      "type": "string",
+      "defaultValue": "new",
+      "allowedValues": [
+        "none",
+        "new",
+        "existing"
+      ],
+      "metadata": {
+        "description": "Indicates whether to create the public IP address"
+      }
+    },
+    "publicIPResourceGroupName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Resource group for the public IP address resource, shall be specified only when 'publicIPCreateOption' is specified as 'existing'"
+      }
+    },
+    "publicIPName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "The name of the public IP address, used only when 'publicIPCreateOption' is specified as 'existing' or 'new'"
+      }
+    },
+    "publicIPSku": {
+      "type": "string",
+      "defaultValue": "Basic",
+      "allowedValues": [
+        "Basic",
+        "Standard"
+      ],
+      "metadata": {
+        "description": "The sku of the public IP address, used only when 'publicIPCreateOption' is specified as 'new'"
+      }
+    },
+    "publicIPDNSNameLabel": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "The DNS name label of the public IP address, used only when 'publicIPCreateOption' is specified as 'new'"
+      }
+    },
+    "publicIPAllocationMethod": {
+      "type": "string",
+      "defaultValue": "Dynamic",
+      "allowedValues": [
+        "Dynamic",
+        "Static"
+      ],
+      "metadata": {
+        "description": "The IP allocation method for the public IP address"
+      }
+    },
     "scriptBaseLocation": {
       "type": "string",
       "metadata": {
@@ -173,8 +228,7 @@
   },
   "variables": {
     "nsgName": "[concat(parameters('headNodeName'), '-nsg')]",
-    "publicIPAddressType": "Dynamic",
-    "publicIPAddressName": "[concat(parameters('headNodeName'), '-publicip')]",
+    "publicIPAddressName": "[if(empty(parameters('publicIPName')), concat(parameters('headNodeName'), '-publicip'), parameters('publicIPName'))]",
     "avSetName": "[concat(parameters('headNodeName'), '-avSet')]",
     "networkSettings": {
       "virtualNetworkName": "[concat(parameters('headNodeName'), '-VNet')]",
@@ -277,12 +331,19 @@
       }
     },
     {
+      "condition": "[equals(parameters('publicIPCreateOption'), 'new')]",
       "type": "Microsoft.Network/publicIPAddresses",
       "name": "[variables('publicIPAddressName')]",
       "apiVersion": "2018-08-01",
       "location": "[parameters('location')]",
+      "sku": {
+        "name": "[parameters('publicIPSku')]"
+      },
       "properties": {
-        "publicIPAllocationMethod": "[variables('publicIPAddressType')]"
+        "publicIPAllocationMethod": "[parameters('publicIPAllocationMethod')]",
+        "dnsSettings": {
+          "domainNameLabel": "[if(empty(parameters('publicIPDNSNameLabel')), json('null'), parameters('publicIPDNSNameLabel'))]"
+        }
       }
     },
     {
@@ -322,7 +383,7 @@
               "privateIPAllocationMethod": "Static",
               "privateIPAddress": "[variables('networkSettings').statics.master]",
               "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
+                "id": "[resourceId(parameters('publicIPResourceGroupName'), 'Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
               },
               "subnet": {
                 "id": "[variables('subnetRef')]"
@@ -450,7 +511,7 @@
       "apiVersion": "2018-10-01",
       "location": "[parameters('location')]",
       "copy": {
-        "name": "foo",
+        "name": "workerAcmAgent",
         "count": "[parameters('workerNodeCount')]"
       },
       "properties": {
@@ -469,7 +530,7 @@
       "apiVersion": "2018-08-01",
       "location": "[parameters('location')]",
       "copy": {
-        "name": "foo",
+        "name": "workerNic",
         "count": "[parameters('workerNodeCount')]"
       },
       "properties": {
@@ -508,7 +569,7 @@
       "name": "[guid(resourceGroup().id, concat(parameters('workerNodeNamePrefix'), copyindex()))]",
       "apiVersion": "2017-09-01",
       "copy": {
-        "name": "anyname",
+        "name": "workerRoleAssignment",
         "count": "[parameters('workerNodeCount')]"
       },
       "properties": {
@@ -526,7 +587,7 @@
       "apiVersion": "2018-10-01",
       "location": "[parameters('location')]",
       "copy": {
-        "name": "foo",
+        "name": "workerVM",
         "count": "[parameters('workerNodeCount')]"
       },
       "identity": {
