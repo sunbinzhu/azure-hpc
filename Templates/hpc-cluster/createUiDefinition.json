@@ -863,7 +863,7 @@
       }
     ],
     "outputs": {
-      "portalDnsNameLabel": "[basics('portalDnsNameLabelText')]",
+      "portalDnsNameLabel": "[basics('portalDnsNameLabel')]",
       "appServicePlanPricingTier": "[steps('portalSetting').frontend.acmAppPriceTier]",
       "portalAnonymousAccess": "[equals(steps('portalSetting').authentication.authOption, 'anonymous')]",
       "aadAuthApplicationId": "[steps('portalSetting').authentication.authAadApplicationId]",
