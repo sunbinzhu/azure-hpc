@@ -27,7 +27,7 @@
       "defaultValue": "",
       "type": "securestring",
       "metadata": {
-        "description": "The ssh public key string for the Admin user"
+        "description": "An RSA SSH public key for the admin user."
       }
     },
     "hpcUserName": {

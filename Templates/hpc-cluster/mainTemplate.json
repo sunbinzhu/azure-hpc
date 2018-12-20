@@ -194,7 +194,7 @@
       "defaultValue": "",
       "type": "securestring",
       "metadata": {
-        "description": "An RSA public key for the admin user."
+        "description": "An RSA SSH public key for the admin user."
       }
     },
     "hpcUserName": {
@@ -382,8 +382,10 @@
     },
     "_artifactsLocation": {
       "type": "string",
+      "defaultValue": "[deployment().properties.templateLink.uri]",
       "metadata": {
-        "description": "The base URI where artifacts (nested templates or scripts) required by this template are located."
+        "description": "The base URI where artifacts (nested templates or scripts) required by this template are located.",
+        "artifactsBaseUrl": ""
       }
     },
     "_artifactsLocationSasToken": {
@@ -399,9 +401,23 @@
     "frontendServicePlanName": "[if(empty(parameters('appServicePlanName')), concat('HpcAcmSP-', uniqueString(resourceGroup().id, 'portal')), parameters('appServicePlanName'))]",
     "aadAuthIssuer": "[concat('https://sts.windows.net/', if(empty(parameters('aadTenantId')), subscription().tenantId, parameters('aadTenantId')), '/')]",
     "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
-    "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), concat('hpcacm', uniqueString(resourceGroup().id, 'portal')), tolower(parameters('portalDnsNameLabel')))]"
+    "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), concat('hpcacm', uniqueString(resourceGroup().id, 'portal')), tolower(parameters('portalDnsNameLabel')))]",
+    "artifactsLocation": "[if(endsWith(parameters('_artifactsLocation'), '/'), parameters('_artifactsLocation'), concat(parameters('_artifactsLocation'), '/'))]"
   },
   "resources": [
+    {
+      "apiVersion": "2018-02-01",
+      "name": "pid-20cbbb6a-dbc4-594b-b9ad-816d806e05c8",
+      "type": "Microsoft.Resources/deployments",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "resources": []
+        }
+      }
+    },
     {
       "type": "Microsoft.Storage/storageAccounts",
       "sku": {
@@ -572,7 +588,7 @@
       "properties": {
         "mode": "Incremental",
         "templateLink": {
-          "uri": "[uri(parameters('_artifactsLocation'), concat('hpccluster.json', parameters('_artifactsLocationSasToken')))]",
+          "uri": "[uri(variables('artifactsLocation'), concat('hpccluster.json', parameters('_artifactsLocationSasToken')))]",
           "contentVersion": "1.0.0.0"
         },
         "parameters": {
@@ -583,10 +599,10 @@
             "value": "[parameters('adminUserName')]"
           },
           "adminPassword": {
-            "value": "parameters('adminPassword')]"
+            "value": "[parameters('adminPassword')]"
           },
           "adminSshPublicKey": {
-            "value": "parameters('adminSshPublicKey')"
+            "value": "[parameters('adminSshPublicKey')]"
           },
           "hpcUserName": {
             "value": "[parameters('hpcUserName')]"
@@ -655,7 +671,7 @@
             "value": "[parameters('publicIPAllocationMethod')]"
           },
           "scriptBaseLocation": {
-            "value": "[parameters('_artifactsLocation')]"
+            "value": "[variables('artifactsLocation')]"
           },
           "scriptBaseLocationSasToken": {
             "value": "[parameters('_artifactsLocationSasToken')]"
