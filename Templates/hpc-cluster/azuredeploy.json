@@ -52,7 +52,7 @@
       }
     },
     "frontendImageName": {
-      "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:frontend",
+      "defaultValue": "louirobert/hpc-acm-frontend:v1.0.0",
       "type": "string",
       "metadata": {
         "description": "Name for the frontend image"
