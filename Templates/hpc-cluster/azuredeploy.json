@@ -122,10 +122,15 @@
       }
     },
     "scheduler": {
-      "defaultValue": "Slurm",
+      "defaultValue": "Slurm_18.08",
       "allowedValues": [
-        "Slurm",
-        "PBSPro-OSS",
+        "Slurm_15.08",
+        "Slurm_16.05",
+        "Slurm 17.02",
+        "Slurm_17.11",
+        "Slurm_18.08",
+        "PBSPro_14.1",
+        "PBSPro_18.1",
         "None"
       ],
       "type": "string",
@@ -456,6 +461,16 @@
       "tier": "[variables('frontendServicePlanSkuParts')[1]]"
     },
     "adminPassword": "[if(and(not(equals(parameters('scheduler'), 'None')), empty(parameters('adminPassword'))), json('null'), parameters('adminPassword'))]",
+    "schedulers": {
+      "Slurm_15.08": "Slurm_15.08.13-1",
+      "Slurm_16.05": "Slurm_16.05.11-1",
+      "Slurm 17.02": "Slurm_17.02.11-1",
+      "Slurm_17.11": "Slurm_17.11.12-1",
+      "Slurm_18.08": "Slurm_18.08.04-1",
+      "PBSPro_14.1": "PBSPro_14.1.0",
+      "PBSPro_18.1": "PBSPro_18.1.3",
+      "None": "None"
+    },
     "linuxNodeImages": {
       "CentOS_7.1": {
         "publisher": "OpenLogic",
@@ -566,7 +581,7 @@
             "value": "[parameters('dashboardMemoryInGb')]"
           },
           "scheduler": {
-            "value": "[parameters('scheduler')]"
+            "value": "[variables('schedulers')[parameters('scheduler')]]"
           },
           "adminUserName": {
             "value": "[parameters('adminUserName')]"

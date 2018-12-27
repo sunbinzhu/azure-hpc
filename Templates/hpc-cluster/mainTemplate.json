@@ -166,11 +166,6 @@
     },
     "scheduler": {
       "defaultValue": "None",
-      "allowedValues": [
-        "Slurm",
-        "PBSPro-OSS",
-        "None"
-      ],
       "type": "string",
       "metadata": {
         "description": "HPC scheduler to install."
@@ -382,7 +377,7 @@
     },
     "_artifactsLocation": {
       "type": "string",
-      "defaultValue": "[deployment().properties.templateLink.uri]",
+      "defaultValue": "[uri(deployment().properties.templateLink.uri, '')]",
       "metadata": {
         "description": "The base URI where artifacts (nested templates or scripts) required by this template are located.",
         "artifactsBaseUrl": ""

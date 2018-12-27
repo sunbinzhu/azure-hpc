@@ -10,8 +10,8 @@ fi
 
 echo "Script arguments: $@"
 
-if [ $# != 9 ]; then
-    echo "Usage: $0 <MasterHostname> <WorkerHostnamePrefix> <WorkerNodeCount> <HPCUserName> <ClusterFilesystem> <ClusterFilesystemStorage> <ImageOffer> <Scheduler> <InstallEasybuild>"
+if [ $# != 10 ]; then
+    echo "Usage: $0 <MasterHostname> <WorkerHostnamePrefix> <WorkerNodeCount> <HPCUserName> <ClusterFilesystem> <ClusterFilesystemStorage> <ImageOffer> <Scheduler> <SchedulerVersion> <InstallEasybuild>"
     exit 1
 fi
 
@@ -26,9 +26,10 @@ HPC_USER=$4
 CFS="$5" # None, BeeGFS
 CFS_STORAGE="$6" # None,Storage,SSD
 CFS_STORAGE_LOCATION="/data/beegfs/storage"
-IMAGE_OFFER="$7"
+HPC_IMAGE="$7"
 SCHEDULER="$8"
-INSTALL_EASYBUILD="$9"
+SCHEDULERVER="$9"
+INSTALL_EASYBUILD="${10}"
 LAST_WORKER_INDEX=$(($WORKER_COUNT - 1))
 
 if [ "$CFS_STORAGE" == "Storage" ]; then
@@ -46,16 +47,17 @@ BEEGFS_METADATA=/data/beegfs/meta
 
 # Munged
 MUNGE_USER=munge
+MUNGE_UID=6005
 MUNGE_GROUP=munge
-MUNGE_VERSION=0.5.11
+MUNGE_GID=6005
 
 # SLURM
 SLURM_USER=slurm
 SLURM_UID=6006
 SLURM_GROUP=slurm
 SLURM_GID=6006
-SLURM_VERSION=15-08-1-1
 SLURM_CONF_DIR=$SHARE_DATA/conf
+SLURM_RPM_DIR=$SHARE_DATA/rpms
 
 # Hpc User
 HPC_UID=7007
@@ -76,8 +78,7 @@ is_master()
 #
 install_pkgs()
 {
-    echo "$IMAGE_OFFER" | grep -q 'HPC$'
-    if [ $? -eq 0 ]; then
+    if [ "$HPC_IMAGE" == "Yes" ]; then
         rpm --rebuilddb
         updatedb
         yum clean all
@@ -87,7 +88,7 @@ install_pkgs()
         sed -i.bak -e '28d' /etc/yum.conf
         sed -i '28i#exclude=kernel*' /etc/yum.conf
 
-        yum -y install zlib zlib-devel bzip2 bzip2-devel bzip2-libs openssl openssl-devel openssl-libs \
+        yum -y install zlib zlib-devel bzip2 bzip2-devel bzip2-libs openssl openssl-devel \
             nfs-utils rpcbind git libicu libicu-devel make zip unzip mdadm wget gsl bc rpm-build  \
             readline-devel pam-devel libXtst.i686 libXtst.x86_64 make.x86_64 sysstat.x86_64 python-pip automake autoconf \
             binutils.x86_64 compat-libcap1.x86_64 glibc.i686 glibc.x86_64 \
@@ -99,9 +100,7 @@ install_pkgs()
         sed -i '28iexclude=kernel*' /etc/yum.conf
     else
         yum -y install epel-release
-        yum -y install zlib zlib-devel bzip2 bzip2-devel bzip2-libs openssl openssl-devel openssl-libs \
-            gcc gcc-c++ nfs-utils rpcbind mdadm wget python-pip kernel kernel-devel \
-            mpich-3.2 mpich-3.2-devel automake autoconf
+        yum -y install zlib bzip2 bzip2-libs openssl openssl-devel nfs-utils rpcbind mdadm wget python-pip kernel kernel-devel mpich-3.2
     fi
 }
 
@@ -199,24 +198,14 @@ setup_shares()
 #
 install_munge()
 {
-    groupadd $MUNGE_GROUP
+    groupadd -g $MUNGE_GID $MUNGE_GROUP
+    useradd -M -u $MUNGE_UID -c "Munge service account" -g $MUNGE_GROUP -s /usr/sbin/nologin $MUNGE_USER
+    yum install -y munge munge-libs munge-devel
 
-    useradd -M -c "Munge service account" -g munge -s /usr/sbin/nologin munge
-
-    wget https://github.com/dun/munge/archive/munge-${MUNGE_VERSION}.tar.gz
-
-    tar xvfz munge-$MUNGE_VERSION.tar.gz
-
-    cd munge-munge-$MUNGE_VERSION
-
-    mkdir -m 700 /etc/munge
-    mkdir -m 711 /var/lib/munge
-    mkdir -m 700 /var/log/munge
-    mkdir -m 755 /var/run/munge
-
-    ./configure -libdir=/usr/lib64 --prefix=/usr --sysconfdir=/etc --localstatedir=/var && make && make install
-
-    chown -R munge:munge /etc/munge /var/lib/munge /var/log/munge /var/run/munge
+    chmod 0700 /etc/munge
+    chmod 0711 /var/lib/munge
+    chmod 0700 /var/log/munge
+    chmod 0755 /var/run/munge
 
     if is_master; then
         dd if=/dev/urandom bs=1 count=1024 > /etc/munge/munge.key
@@ -228,10 +217,9 @@ install_munge()
 
     chown munge:munge /etc/munge/munge.key
     chmod 0400 /etc/munge/munge.key
-
-    /etc/init.d/munge start
-
-    cd ..
+    
+    systemctl enable munge
+    systemctl start munge
 }
 
 # Installs and configures slurm.conf on the node.
@@ -255,68 +243,99 @@ install_slurm_config()
     ln -s $SLURM_CONF_DIR/slurm.conf /etc/slurm/slurm.conf
 }
 
+build_slurm()
+{
+    yum install -y readline-devel pam-devel perl-ExtUtils-MakeMaker mariadb-server mariadb-devel \
+      gcc gcc-c++ automake autoconf rpm-build
+
+    SLURM_GITVERSION="${SCHEDULERVER//./-}"
+    SLURM_RELEASE="${SCHEDULERVER:0:5}"
+    SLURM_VERSION="${SCHEDULERVER/-*/}"
+    if [[ "$SLURM_RELEASE" > "17.02" ]]; then
+        wget https://download.schedmd.com/slurm/slurm-$SLURM_VERSION.tar.bz2
+        if [ $? -ne 0 ]; then
+            wget https://github.com/SchedMD/slurm/archive/slurm-$SLURM_GITVERSION.tar.gz
+            tar xvfz slurm-$SLURM_GITVERSION.tar.gz
+            mv slurm-slurm-$SLURM_GITVERSION slurm-$SLURM_VERSION
+            tar -cvjSf slurm-$SLURM_VERSION.tar.bz2 slurm-$SLURM_VERSION
+        fi
+        rpmbuild -ta slurm-$SLURM_VERSION.tar.bz2
+    else
+        wget https://github.com/SchedMD/slurm/archive/slurm-$SLURM_GITVERSION.tar.gz
+        tar xvfz slurm-$SLURM_GITVERSION.tar.gz
+        mv slurm-slurm-$SLURM_GITVERSION slurm-$SCHEDULERVER
+        sed -i "s/^Name:\s*see META file/Name:     slurm/" slurm-$SCHEDULERVER/slurm.spec
+        sed -i "s/^Version:\s*see META file/Version:  ${SLURM_VERSION}/" slurm-$SCHEDULERVER/slurm.spec
+        sed -i "s/^Release:\s*see META file/Release:  1/" slurm-$SCHEDULERVER/slurm.spec
+        tar czvf slurm-$SCHEDULERVER.tgz slurm-$SCHEDULERVER
+        rpmbuild -ta slurm-$SCHEDULERVER.tgz
+    fi
+    
+    if [ $? -ne 0 ]; then
+        echo "Build Slurm failed"
+        exit 1
+    fi
+    
+    mkdir -p $SLURM_RPM_DIR
+    cp  ~/rpmbuild/RPMS/x86_64/slurm-*.rpm $SLURM_RPM_DIR
+}
+
 # Downloads, builds and installs SLURM on the node.
 # Starts the SLURM control daemon on the master node and
 # the agent on worker nodes.
 #
 install_slurm()
-{
+{   
     groupadd -g $SLURM_GID $SLURM_GROUP
-
     useradd -M -u $SLURM_UID -c "SLURM service account" -g $SLURM_GROUP -s /usr/sbin/nologin $SLURM_USER
+    if is_master; then
+        build_slurm
+    fi
 
-    mkdir -p /etc/slurm /var/spool/slurmd /var/run/slurmd /var/run/slurmctld /var/log/slurmd /var/log/slurmctld
-
-    chown -R slurm:slurm /var/spool/slurmd /var/run/slurmd /var/run/slurmctld /var/log/slurmd /var/log/slurmctld
-
-    wget https://github.com/SchedMD/slurm/archive/slurm-$SLURM_VERSION.tar.gz
-
-    tar xvfz slurm-$SLURM_VERSION.tar.gz
-
-    cd slurm-slurm-$SLURM_VERSION
-
-    ./configure -libdir=/usr/lib64 --prefix=/usr --sysconfdir=/etc/slurm && make -j 4 && make install
-
+    yum install -y $SLURM_RPM_DIR/slurm-*.rpm
     install_slurm_config
 
     if is_master; then
+        mkdir -p /etc/slurm /var/spool/slurmd /var/run/slurmd /var/run/slurmctld /var/log/slurmd /var/log/slurmctld
+        chown -R slurm:slurm /var/spool/slurmd /var/run/slurmd /var/run/slurmctld /var/log/slurmd /var/log/slurmctld
         cp "$SCRIPT_BASEDIR/slurmctld.service" /usr/lib/systemd/system
         systemctl daemon-reload
         systemctl enable slurmctld
         systemctl start slurmctld
         systemctl status slurmctld
     else
+        mkdir -p /etc/slurm /var/spool/slurmd /var/run/slurmd /var/log/slurmd
+        chown -R slurm:slurm /var/spool/slurmd /var/run/slurmd /var/log/slurmd
         cp "$SCRIPT_BASEDIR/slurmd.service" /usr/lib/systemd/system
         systemctl daemon-reload
         systemctl enable slurmd
         systemctl start slurmd
         systemctl status slurmd
     fi
-
-    cd ..
 }
 
 # Downloads and installs PBS Pro OSS on the node.
 # Starts the PBS Pro control daemon on the master node and
 # the mom agent on worker nodes.
 #
-install_pbsoss()
+install_pbspro()
 {
-    yum install -y gcc make rpm-build libtool hwloc-devel \
-      libX11-devel libXt-devel libedit-devel libical-devel \
-      ncurses-devel perl postgresql-devel python-devel tcl-devel \
-      tk-devel swig expat-devel openssl-devel libXext libXft \
-      autoconf automake expat libedit postgresql-server python \
-      sendmail tcl tk libical perl-Env perl-Switch
+    yum install compat-libical1 expat libedit postgresql-server python sendmail sudo \
+      tcl tk libical libtool libtool-ltdl hwloc-libs perl swig expat-devel libXext \
+      libXft perl-Env perl-Switch hesiod procmail libICE libSM
 
-    # Required on 7.2 as the libical lib changed
-    ln -s /usr/lib64/libical.so.1 /usr/lib64/libical.so.0
-
-    wget http://wpc.23a7.iotacdn.net/8023A7/origin2/rl/PBS-Open/CentOS_7.zip
-    unzip CentOS_7.zip
-    cd CentOS_7
-    rpm -ivh --nodeps pbspro-server-14.1.0-13.1.x86_64.rpm
-
+    if [[ "$SCHEDULERVER" == "14.1.0" ]]; then
+        # Required on 7.2 as the libical lib changed
+        ln -s /usr/lib64/libical.so.1 /usr/lib64/libical.so.0
+        wget http://wpc.23a7.iotacdn.net/8023A7/origin2/rl/PBS-Open/CentOS_7.zip
+        unzip CentOS_7.zip
+        rpm -ivh --nodeps CentOS_7/pbspro-server-14.1.0-13.1.x86_64.rpm
+    else
+        wget https://github.com/PBSPro/pbspro/releases/download/v18.1.3/pbspro_$SCHEDULERVER.centos7.zip
+        unzip pbspro_$SCHEDULERVER.centos7.zip
+        yum install -y pbspro_$SCHEDULERVER.centos7/pbspro-server-${SCHEDULERVER}-0.x86_64.rpm
+    fi
+    
     echo 'export PATH=/opt/pbs/default/bin:$PATH' >> /etc/profile.d/pbs.sh
     echo 'export PATH=/opt/pbs/default/sbin:$PATH' >> /etc/profile.d/pbs.sh
 
@@ -358,8 +377,6 @@ EOF
 
         /etc/init.d/pbs start
     fi
-
-    cd ..
 }
 
 install_scheduler()
@@ -367,8 +384,8 @@ install_scheduler()
     if [ "$SCHEDULER" == "Slurm" ]; then
         install_munge
         install_slurm
-    elif [ "$SCHEDULER" == "PBSPro-OSS" ]; then
-        install_pbsoss
+    elif [ "$SCHEDULER" == "PBSPro" ]; then
+        install_pbspro
     else
         echo "Invalid scheduler specified: $SCHEDULER"
         exit 1
@@ -434,8 +451,7 @@ setup_env()
     echo "$HPC_USER hard memlock unlimited" >> /etc/security/limits.conf
     echo "$HPC_USER soft memlock unlimited" >> /etc/security/limits.conf
 
-    echo "$IMAGE_OFFER" | grep -q 'HPC$'
-    if [ $? -eq 0 ]; then
+    if [ "$HPC_IMAGE" == "Yes" ]; then
         # Intel MPI config for IB
         echo "# IB Config for MPI" > /etc/profile.d/mpi.sh
         echo "export I_MPI_FABRICS=shm:dapl" >> /etc/profile.d/mpi.sh
@@ -514,5 +530,4 @@ install_cfs
 install_scheduler
 setup_env
 install_easybuild
-shutdown -r +1 &
 exit 0

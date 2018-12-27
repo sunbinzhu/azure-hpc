@@ -359,17 +359,37 @@
                 "name": "schedulerType",
                 "type": "Microsoft.Common.DropDown",
                 "label": "HPC Scheduler",
-                "defaultValue": "Slurm",
+                "defaultValue": "Slurm 18.08",
                 "toolTip": "The HPC scheduler to be installed.",
                 "constraints": {
                   "allowedValues": [
                     {
-                      "label": "Slurm",
-                      "value": "Slurm"
+                      "label": "Slurm 15.08",
+                      "value": "Slurm_15.08.13-1"
                     },
                     {
-                      "label": "PBSPro OSS",
-                      "value": "PBSPro-OSS"
+                      "label": "Slurm 16.05",
+                      "value": "Slurm_16.05.11-1"
+                    },
+                    {
+                      "label": "Slurm 17.02",
+                      "value": "Slurm_17.02.11-1"
+                    },
+                    {
+                      "label": "Slurm 17.11",
+                      "value": "Slurm_17.11.12-1"
+                    },
+                    {
+                      "label": "Slurm 18.08",
+                      "value": "Slurm_18.08.04-1"
+                    },
+                    {
+                      "label": "PBSPro 14.1",
+                      "value": "PBSPro_14.1.0"
+                    },
+                    {
+                      "label": "PBSPro 18.1",
+                      "value": "PBSPro_18.1.3"
                     }
                   ]
                 }
