@@ -210,9 +210,9 @@ install_munge()
     if is_master; then
         dd if=/dev/urandom bs=1 count=1024 > /etc/munge/munge.key
         mkdir -p $SLURM_CONF_DIR
-        cp /etc/munge/munge.key $SLURM_CONF_DIR
+        \cp -rf /etc/munge/munge.key $SLURM_CONF_DIR
     else
-        cp $SLURM_CONF_DIR/munge.key /etc/munge/munge.key
+        \cp -rf $SLURM_CONF_DIR/munge.key /etc/munge/munge.key
     fi
 
     chown munge:munge /etc/munge/munge.key
@@ -232,9 +232,7 @@ install_slurm_config()
     if is_master; then
 
         mkdir -p $SLURM_CONF_DIR
-        cp "$SCRIPT_BASEDIR/slurm.template.conf" .
-
-        cat slurm.template.conf |
+        cat $SCRIPT_BASEDIR/slurm.template.conf |
         sed 's/__MASTER__/'"$MASTER_HOSTNAME"'/g' |
                 sed 's/__WORKER_HOSTNAME_PREFIX__/'"$WORKER_HOSTNAME_PREFIX"'/g' |
                 sed 's/__LAST_WORKER_INDEX__/'"$LAST_WORKER_INDEX"'/g' > $SLURM_CONF_DIR/slurm.conf
@@ -277,7 +275,15 @@ build_slurm()
     fi
     
     mkdir -p $SLURM_RPM_DIR
-    cp  ~/rpmbuild/RPMS/x86_64/slurm-*.rpm $SLURM_RPM_DIR
+    if [ -d "/root/rpmbuild/RPMS/x86_64" ]; then
+        \cp -rf /root/rpmbuild/RPMS/x86_64/slurm-*.rpm $SLURM_RPM_DIR
+    elif [ -d "/root/rpmbuild/RPMS/x86_64" ]; then
+        \cp -rf /rpmbuild/RPMS/x86_64/slurm-*.rpm $SLURM_RPM_DIR
+        rm -rf /rpmbuild
+    else
+        echo "Build Slurm failed"
+        exit 1
+    fi
 }
 
 # Downloads, builds and installs SLURM on the node.
@@ -293,20 +299,19 @@ install_slurm()
     fi
 
     yum install -y $SLURM_RPM_DIR/slurm-*.rpm
-    install_slurm_config
+    mkdir -p /etc/slurm /var/spool/slurmd /var/run/slurmd /var/run/slurmctld /var/log/slurmd /var/log/slurmctld
+    chown -R slurm:slurm /var/spool/slurmd /var/run/slurmd /var/run/slurmctld /var/log/slurmd /var/log/slurmctld
 
+    install_slurm_config
+        
     if is_master; then
-        mkdir -p /etc/slurm /var/spool/slurmd /var/run/slurmd /var/run/slurmctld /var/log/slurmd /var/log/slurmctld
-        chown -R slurm:slurm /var/spool/slurmd /var/run/slurmd /var/run/slurmctld /var/log/slurmd /var/log/slurmctld
-        cp "$SCRIPT_BASEDIR/slurmctld.service" /usr/lib/systemd/system
+        \cp -rf "$SCRIPT_BASEDIR/slurmctld.service" /usr/lib/systemd/system
         systemctl daemon-reload
         systemctl enable slurmctld
         systemctl start slurmctld
         systemctl status slurmctld
     else
-        mkdir -p /etc/slurm /var/spool/slurmd /var/run/slurmd /var/log/slurmd
-        chown -R slurm:slurm /var/spool/slurmd /var/run/slurmd /var/log/slurmd
-        cp "$SCRIPT_BASEDIR/slurmd.service" /usr/lib/systemd/system
+        \cp -rf "$SCRIPT_BASEDIR/slurmd.service" /usr/lib/systemd/system
         systemctl daemon-reload
         systemctl enable slurmd
         systemctl start slurmd
