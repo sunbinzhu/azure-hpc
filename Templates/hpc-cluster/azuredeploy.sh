@@ -277,7 +277,7 @@ build_slurm()
     mkdir -p $SLURM_RPM_DIR
     if [ -d "/root/rpmbuild/RPMS/x86_64" ]; then
         \cp -rf /root/rpmbuild/RPMS/x86_64/slurm-*.rpm $SLURM_RPM_DIR
-    elif [ -d "/root/rpmbuild/RPMS/x86_64" ]; then
+    elif [ -d "/rpmbuild/RPMS/x86_64" ]; then
         \cp -rf /rpmbuild/RPMS/x86_64/slurm-*.rpm $SLURM_RPM_DIR
         rm -rf /rpmbuild
     else

@@ -136,10 +136,10 @@
                 "name": "acmWebAppAuthText",
                 "type": "Microsoft.Common.TextBlock",
                 "options": {
-                  "text": "Specify how you want to configure the authentication of the ACM portal. You can specify an existing AAD application or manually configure later after deployment",
+                  "text": "Specify how you want to configure the authentication of the ACM portal. If 'Configure later' is selected, you must manually configure the authentication setting of the Portal Web App before you can access it.",
                   "link": {
                     "label": "Learn more about authentication",
-                    "uri": "https://docs.microsoft.com/en-us/azure/app-service/azure-web-sites-web-hosting-plans-in-depth-overview"
+                    "uri": "https://go.microsoft.com/fwlink/?linkid=2054782"
                   }
                 }
               },
@@ -325,7 +325,7 @@
               "text": "You can create a new HPC cluster with 'Slurm' or 'PBSPro OSS' scheduler and automatically register it to the ACM portal now, or manually register your existing HPC cluster later.",
               "link": {
                 "label": "Learn more",
-                "uri": "https://docs.microsoft.com/en-us/azure/container-instances/container-instances-quotas#service-quotas-and-limits"
+                "uri": "https://go.microsoft.com/fwlink/?linkid=2055058"
               }
             }
           },
@@ -687,7 +687,7 @@
                 "name": "workerNodeNamePrefix",
                 "type": "Microsoft.Common.TextBox",
                 "label": "worker node name prefix",
-                "toolTip": "The name prefix of the worker nodes. For example, if 'worker' is specified, the worker node names will be 'worker000', 'worker001', ...",
+                "toolTip": "The name prefix of the worker nodes. For example, if 'worker' is specified, the worker node names will be 'worker0', 'worker1', ...",
                 "defaultValue": "worker",
                 "constraints": {
                   "required": true,
