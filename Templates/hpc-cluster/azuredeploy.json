@@ -10,16 +10,17 @@
       }
     },
     "frontendServiceSku": {
-      "defaultValue": "B1 Basic",
+      "defaultValue": "S1 Standard",
       "allowedValues": [
         "B1 Basic",
         "B2 Basic",
+        "B3 Basic",
         "S1 Standard",
         "S2 Standard",
-        "P1 Premium",
-        "P2 Premium",
+        "S3 Standard",
         "P1v2 PremiumV2",
-        "P2v2 PremiumV2"
+        "P2v2 PremiumV2",
+        "P3v2 PremiumV2"
       ],
       "type": "string",
       "metadata": {
@@ -52,7 +53,7 @@
       }
     },
     "frontendImageName": {
-      "defaultValue": "louirobert/hpc-acm-frontend:v1.0.0",
+      "defaultValue": "mcr.microsoft.com/hpcpack/hpcacm:frontend",
       "type": "string",
       "metadata": {
         "description": "Name for the frontend image"
@@ -121,6 +122,43 @@
         "description": "The amount of memory in GB to allocate to the dashboard container instance."
       }
     },
+    "storageAccountType": {
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_ZRS"
+      ],
+      "type": "string",
+      "metadata": {
+        "description": "Storage Account type"
+      }
+    },
+    "storageAccountName": {
+      "defaultValue": "[uniquestring(resourceGroup().id, 'storage')]",
+      "type": "string",
+      "metadata": {
+        "description": "Storage Account Name"
+      }
+    },
+    "storageAccountResourceGroup": {
+      "defaultValue": "[resourceGroup().name]",
+      "type": "string",
+      "metadata": {
+        "description": "Resource group in which the storage account locates"
+      }
+    },
+    "newOrExistingStorageAccount": {
+      "defaultValue": "new",
+      "type": "string",
+      "allowedValues": [
+        "new",
+        "existing"
+      ],
+      "metadata": {
+        "description": "Resource group in which the storage account locates"
+      }
+    },
     "scheduler": {
       "defaultValue": "Slurm_18.08",
       "allowedValues": [
@@ -163,15 +201,25 @@
       "defaultValue": "CentOS_7.3",
       "allowedValues": [
         "CentOS_7.1",
+        "CentOS_7.2",
         "CentOS_7.3",
         "CentOS_7.4",
+        "CentOS_7.5",
         "CentOS_7.1_HPC",
         "CentOS_7.3_HPC",
-        "CentOS_7.4_HPC"
+        "CentOS_7.4_HPC",
+        "Other"
       ],
       "type": "string",
       "metadata": {
-        "description": "The OS image offer to use, either HPC with Intel MPI or the vanilla CentOS version."
+        "description": "The OS image, if you choose an image with '_HPC' suffix, make sure you choose the RDMA capable VM size for both head node and worker nodes."
+      }
+    },
+    "otherHpcNodeImage": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "Specify the CentOS 7.x VM image in the format of 'ImagePublisher/ImageOffer/ImageSku' for Marketplace image or 'ResourceGroupName/ImageName' for private image if you choose 'Other' above, add suffix ':RDMA' if RDMA driver is installed."
       }
     },
     "headNodeName": {
@@ -182,57 +230,59 @@
       }
     },
     "headNodeSize": {
-      "defaultValue": "Standard_D4_v2",
+      "defaultValue": "Standard_D4_v3",
       "allowedValues": [
-        "Standard_A2",
-        "Standard_A4",
-        "Standard_A7",
-        "Standard_A8",
-        "Standard_A9",
-        "Standard_A10",
-        "Standard_A11",
-        "Standard_D4",
-        "Standard_D13",
-        "Standard_D14",
-        "Standard_DS4",
-        "Standard_DS13",
-        "Standard_DS14",
-        "Standard_D4_v2",
-        "Standard_D5_v2",
-        "Standard_D11_v2",
-        "Standard_D12_v2",
-        "Standard_D13_v2",
-        "Standard_D14_v2",
-        "Standard_D15_v2",
-        "Standard_DS1_v2",
+        "Standard_D2s_v3",
+        "Standard_D4s_v3",
+        "Standard_D8s_v3",
+        "Standard_D16s_v3",
+        "Standard_D32s_v3",
+        "Standard_D64s_v3",
+        "Standard_D2_v3",
+        "Standard_D4_v3",
+        "Standard_D8_v3",
+        "Standard_D16_v3",
+        "Standard_D32_v3",
+        "Standard_D64_v3",
         "Standard_DS2_v2",
         "Standard_DS3_v2",
         "Standard_DS4_v2",
         "Standard_DS5_v2",
-        "Standard_DS11_v2",
         "Standard_DS12_v2",
         "Standard_DS13_v2",
         "Standard_DS14_v2",
         "Standard_DS15_v2",
-        "Standard_F4",
-        "Standard_F8",
-        "Standard_F16",
-        "Standard_G3",
-        "Standard_G4",
-        "Standard_G5",
-        "Standard_GS3",
-        "Standard_GS4",
-        "Standard_GS5",
+        "Standard_D2_v2",
+        "Standard_D3_v2",
+        "Standard_D4_v2",
+        "Standard_D5_v2",
+        "Standard_D12_v2",
+        "Standard_D13_v2",
+        "Standard_D14_v2",
+        "Standard_D15_v2",
+        "Standard_A8",
+        "Standard_A9",
         "Standard_H8",
         "Standard_H16",
         "Standard_H8m",
         "Standard_H16m",
-        "Standard_H16mr",
         "Standard_H16r",
-        "Standard_L4",
-        "Standard_L8",
-        "Standard_L16",
-        "Standard_L32"
+        "Standard_H16mr",
+        "Standard_NV6s_v2",
+        "Standard_NV12s_v2",
+        "Standard_NV24s_v2",
+        "Standard_F4",
+        "Standard_F8",
+        "Standard_F16",
+        "Standard_F4s",
+        "Standard_F8s",
+        "Standard_F16s",
+        "Standard_F4s_v2",
+        "Standard_F8s_v2",
+        "Standard_F16s_v2",
+        "Standard_F32s_v2",
+        "Standard_F64s_v2",
+        "Standard_F72s_v2"
       ],
       "type": "string",
       "metadata": {
@@ -259,48 +309,20 @@
       }
     },
     "workerNodeSize": {
-      "defaultValue": "Standard_D2_v2",
+      "defaultValue": "Standard_D4_v3",
       "allowedValues": [
-        "Standard_A2",
-        "Standard_A3",
-        "Standard_A4",
-        "Standard_A5",
-        "Standard_A6",
-        "Standard_A7",
-        "Standard_A8",
-        "Standard_A9",
-        "Standard_A10",
-        "Standard_A11",
-        "Standard_D1",
-        "Standard_D2",
-        "Standard_D3",
-        "Standard_D4",
-        "Standard_D11",
-        "Standard_D12",
-        "Standard_D13",
-        "Standard_D14",
-        "Standard_DS1",
-        "Standard_DS2",
-        "Standard_DS3",
-        "Standard_DS4",
-        "Standard_D11",
-        "Standard_D12",
-        "Standard_D13",
-        "Standard_D14",
-        "Standard_DS11",
-        "Standard_DS12",
-        "Standard_DS13",
-        "Standard_DS14",
-        "Standard_D1_v2",
-        "Standard_D2_v2",
-        "Standard_D3_v2",
-        "Standard_D4_v2",
-        "Standard_D5_v2",
-        "Standard_D11_v2",
-        "Standard_D12_v2",
-        "Standard_D13_v2",
-        "Standard_D14_v2",
-        "Standard_D15_v2",
+        "Standard_D2s_v3",
+        "Standard_D4s_v3",
+        "Standard_D8s_v3",
+        "Standard_D16s_v3",
+        "Standard_D32s_v3",
+        "Standard_D64s_v3",
+        "Standard_D2_v3",
+        "Standard_D4_v3",
+        "Standard_D8_v3",
+        "Standard_D16_v3",
+        "Standard_D32_v3",
+        "Standard_D64_v3",
         "Standard_DS1_v2",
         "Standard_DS2_v2",
         "Standard_DS3_v2",
@@ -311,31 +333,44 @@
         "Standard_DS13_v2",
         "Standard_DS14_v2",
         "Standard_DS15_v2",
+        "Standard_D1_v2",
+        "Standard_D2_v2",
+        "Standard_D3_v2",
+        "Standard_D4_v2",
+        "Standard_D5_v2",
+        "Standard_D11_v2",
+        "Standard_D12_v2",
+        "Standard_D13_v2",
+        "Standard_D14_v2",
+        "Standard_D15_v2",
+        "Standard_A8",
+        "Standard_A9",
+        "Standard_H8",
+        "Standard_H16",
+        "Standard_H8m",
+        "Standard_H16m",
+        "Standard_H16r",
+        "Standard_H16mr",
+        "Standard_NV6s_v2",
+        "Standard_NV12s_v2",
+        "Standard_NV24s_v2",
         "Standard_F1",
         "Standard_F2",
         "Standard_F4",
         "Standard_F8",
         "Standard_F16",
-        "Standard_G1",
-        "Standard_G2",
-        "Standard_G3",
-        "Standard_G4",
-        "Standard_G5",
-        "Standard_GS1",
-        "Standard_GS2",
-        "Standard_GS3",
-        "Standard_GS4",
-        "Standard_GS5",
-        "Standard_H8",
-        "Standard_H16",
-        "Standard_H8m",
-        "Standard_H16m",
-        "Standard_H16mr",
-        "Standard_H16r",
-        "Standard_L4",
-        "Standard_L8",
-        "Standard_L16",
-        "Standard_L32"
+        "Standard_F1s",
+        "Standard_F2s",
+        "Standard_F4s",
+        "Standard_F8s",
+        "Standard_F16s",
+        "Standard_F2s_v2",
+        "Standard_F4s_v2",
+        "Standard_F8s_v2",
+        "Standard_F16s_v2",
+        "Standard_F32s_v2",
+        "Standard_F64s_v2",
+        "Standard_F72s_v2"
       ],
       "type": "string",
       "metadata": {
@@ -381,6 +416,7 @@
     "headNodeDataDiskCount": {
       "defaultValue": 1,
       "allowedValues": [
+        0,
         1,
         2,
         4,
@@ -405,8 +441,9 @@
       }
     },
     "workerNodeDataDiskCount": {
-      "defaultValue": 1,
+      "defaultValue": 0,
       "allowedValues": [
+        0,
         1,
         2,
         4,
@@ -455,11 +492,6 @@
     }
   },
   "variables": {
-    "frontendServicePlanSkuParts": "[split(parameters('frontendServiceSku'), ' ')]",
-    "appServicePlanSku": {
-      "name": "[variables('frontendServicePlanSkuParts')[0]]",
-      "tier": "[variables('frontendServicePlanSkuParts')[1]]"
-    },
     "adminPassword": "[if(and(not(equals(parameters('scheduler'), 'None')), empty(parameters('adminPassword'))), json('null'), parameters('adminPassword'))]",
     "schedulers": {
       "Slurm_15.08": "Slurm_15.08.13-1",
@@ -472,55 +504,17 @@
       "None": "None"
     },
     "linuxNodeImages": {
-      "CentOS_7.1": {
-        "publisher": "OpenLogic",
-        "offer": "CentOS",
-        "sku": "7.1",
-        "version": "latest"
-      },
-      "CentOS_7.3": {
-        "publisher": "OpenLogic",
-        "offer": "CentOS",
-        "sku": "7.3",
-        "version": "latest"
-      },
-      "CentOS_7.4": {
-        "publisher": "OpenLogic",
-        "offer": "CentOS",
-        "sku": "7.4",
-        "version": "latest"
-      },
-      "CentOS_7.1_HPC": {
-        "publisher": "OpenLogic",
-        "offer": "CentOS-HPC",
-        "sku": "7.1",
-        "version": "latest"
-      },
-      "CentOS_7.3_HPC": {
-        "publisher": "OpenLogic",
-        "offer": "CentOS-HPC",
-        "sku": "7.3",
-        "version": "latest"
-      },
-      "CentOS_7.4_HPC": {
-        "publisher": "OpenLogic",
-        "offer": "CentOS-HPC",
-        "sku": "7.4",
-        "version": "latest"
-      },
-      "RHEL_7.3": {
-        "publisher": "RedHat",
-        "offer": "RHEL",
-        "sku": "7.3",
-        "version": "latest"
-      },
-      "RHEL_7.4": {
-        "publisher": "RedHat",
-        "offer": "RHEL",
-        "sku": "7.4",
-        "version": "latest"
-      }
+      "CentOS_7.1": "OpenLogic/CentOS/7.1",
+      "CentOS_7.2": "OpenLogic/CentOS/7.2",
+      "CentOS_7.3": "OpenLogic/CentOS/7.3",
+      "CentOS_7.4": "OpenLogic/CentOS/7.4",
+      "CentOS_7.5": "OpenLogic/CentOS/7.5",
+      "CentOS_7.1_HPC": "OpenLogic/CentOS-HPC/7.1:RDMA",
+      "CentOS_7.3_HPC": "OpenLogic/CentOS-HPC/7.1:RDMA",
+      "CentOS_7.4_HPC": "OpenLogic/CentOS-HPC/7.1:RDMA",
+      "Other": "Other"
     },
+    "hpcNodeImage": "[if(equals(parameters('hpcNodeImage'), 'Other'), parameters('otherHpcNodeImage'), variables('linuxNodeImages')[parameters('hpcNodeImage')])]",
     "artifactsBaseUrl": "https://raw.githubusercontent.com/sunbinzhu/azure-hpc/master/Templates/hpc-cluster/"
   },
   "resources": [
@@ -539,7 +533,7 @@
             "value": "[parameters('portalDnsNameLabel')]"
           },
           "appServicePlanPricingTier": {
-            "value": "[variables('appServicePlanSku')]"
+            "value": "[parameters('frontendServiceSku')]"
           },
           "portalAnonymousAccess": {
             "value": "[equals(parameters('portalAnonymousAccess'), 'Yes')]"
@@ -580,6 +574,18 @@
           "dashboardMemoryInGb": {
             "value": "[parameters('dashboardMemoryInGb')]"
           },
+          "storageAccountName": {
+            "value": "[parameters('storageAccountName')]"
+          },
+          "storageAccountResourceGroup": {
+            "value": "[parameters('storageAccountResourceGroup')]"
+          },
+          "storageAccountType": {
+            "value": "[parameters('storageAccountType')]"
+          },
+          "newOrExistingStorageAccount": {
+            "value": "[parameters('newOrExistingStorageAccount')]"
+          },
           "scheduler": {
             "value": "[variables('schedulers')[parameters('scheduler')]]"
           },
@@ -593,7 +599,7 @@
             "value": "[parameters('hpcUserName')]"
           },
           "hpcNodeImage": {
-            "value": "[variables('linuxNodeImages')[parameters('hpcNodeImage')]]"
+            "value": "[variables('hpcNodeImage')]"
           },
           "headNodeName": {
             "value": "[parameters('headNodeName')]"

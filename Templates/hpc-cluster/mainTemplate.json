@@ -17,11 +17,8 @@
       }
     },
     "appServicePlanPricingTier": {
-      "defaultValue": {
-        "name": "S1",
-        "tier": "Standard"
-      },
-      "type": "object",
+      "defaultValue": "S1 Standard",
+      "type": "string",
       "metadata": {
         "description": "The pricing tier of App service plan for the frontend service"
       }
@@ -64,6 +61,24 @@
       "type": "string",
       "metadata": {
         "description": "Storage Account Name"
+      }
+    },
+    "storageAccountResourceGroup": {
+      "defaultValue": "[resourceGroup().name]",
+      "type": "string",
+      "metadata": {
+        "description": "Resource group in which the storage account locates"
+      }
+    },
+    "newOrExistingStorageAccount": {
+      "defaultValue": "new",
+      "type": "string",
+      "allowedValues": [
+        "new",
+        "existing"
+      ],
+      "metadata": {
+        "description": "Resource group in which the storage account locates"
       }
     },
     "frontendImageName": {
@@ -196,14 +211,14 @@
       "defaultValue": "hpcuser",
       "type": "string",
       "metadata": {
-        "description": "User for running HPC applications with shared home directory and SSH public key authentication setup.  This user cannot login from outside the cluster. Pick a valid username otherwise there will be a BadRequest error."
+        "description": "User for running HPC applications with shared home directory and SSH public key authentication setup."
       }
     },
     "hpcNodeImage": {
-      "defaultValue": {},
-      "type": "object",
+      "defaultValue": "OpenLogic/CentOS/7.3",
+      "type": "string",
       "metadata": {
-        "description": "The OS image offer to use, either HPC with Intel MPI or the vanilla CentOS version."
+        "description": "The OS image. You shall addd ':RDMA' suffix if RDMA driver already installed, and make sure you choose the RDMA capable VM size for both head node and worker nodes."
       }
     },
     "headNodeName": {
@@ -214,7 +229,7 @@
       }
     },
     "headNodeSize": {
-      "defaultValue": "Standard_D4_v2",
+      "defaultValue": "Standard_D4_v3",
       "type": "string",
       "metadata": {
         "description": "Size of the head node."
@@ -235,7 +250,7 @@
       }
     },
     "workerNodeSize": {
-      "defaultValue": "Standard_D2_v2",
+      "defaultValue": "Standard_D4_v3",
       "type": "string",
       "metadata": {
         "description": "Size of the worker nodes."
@@ -392,11 +407,26 @@
     }
   },
   "variables": {
+    "servicePlanSkuName": "[split(trim(parameters('appServicePlanPricingTier')), ' ')[0]]",
+    "servicePlanSkuTier": "[split(trim(parameters('appServicePlanPricingTier')), ' ')[1]]",
     "storageAccountName": "[if(empty(parameters('storageAccountName')), uniqueString(resourceGroup().id, 'storage'), tolower(parameters('storageAccountName')))]",
     "frontendServicePlanName": "[if(empty(parameters('appServicePlanName')), concat('HpcAcmSP-', uniqueString(resourceGroup().id, 'portal')), parameters('appServicePlanName'))]",
     "aadAuthIssuer": "[concat('https://sts.windows.net/', if(empty(parameters('aadTenantId')), subscription().tenantId, parameters('aadTenantId')), '/')]",
-    "storageAccountId": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
+    "storageAccountId": "[resourceId(parameters('storageAccountResourceGroup'), 'Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
     "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), concat('hpcacm', uniqueString(resourceGroup().id, 'portal')), tolower(parameters('portalDnsNameLabel')))]",
+    "rdmaDriverInstalled": "[contains(parameters('hpcNodeImage'), ':RDMA')]",
+    "hpcNodeImageParts": "[split(replace(parameters('hpcNodeImage'), ':RDMA', ''), '/')]",
+    "appendedHpcNodeImageParts": "[concat(variables('hpcNodeImageParts'), array('user'))]",
+    "publicHpcNodeImage": {
+      "publisher": "[variables('hpcNodeImageParts')[0]]",
+      "offer": "[variables('hpcNodeImageParts')[1]]",
+      "sku": "[variables('appendedHpcNodeImageParts')[2]]",
+      "version": "latest"
+    },
+    "privateHpcNodeImage": {
+      "id": "[resourceId(variables('hpcNodeImageParts')[0], 'Microsoft.Compute/images', variables('hpcNodeImageParts')[1])]"
+    },
+    "hpcNodeImageRef": "[if(equals(length(variables('hpcNodeImageParts')), 3), variables('publicHpcNodeImage'), variables('privateHpcNodeImage'))]",
     "artifactsLocation": "[if(endsWith(parameters('_artifactsLocation'), '/'), parameters('_artifactsLocation'), concat(parameters('_artifactsLocation'), '/'))]"
   },
   "resources": [
@@ -414,6 +444,7 @@
       }
     },
     {
+      "condition": "[equals(parameters('newOrExistingStorageAccount'), 'new')]",
       "type": "Microsoft.Storage/storageAccounts",
       "sku": {
         "name": "[parameters('storageAccountType')]"
@@ -426,7 +457,10 @@
     },
     {
       "type": "Microsoft.Web/serverfarms",
-      "sku": "[parameters('appServicePlanPricingTier')]",
+      "sku": {
+        "name": "[variables('servicePlanSkuName')]",
+        "tier": "[variables('servicePlanSkuTier')]"
+      },
       "kind": "linux",
       "name": "[variables('frontendServicePlanName')]",
       "apiVersion": "2018-02-01",
@@ -602,8 +636,11 @@
           "hpcUserName": {
             "value": "[parameters('hpcUserName')]"
           },
-          "hpcNodeImage": {
-            "value": "[parameters('hpcNodeImage')]"
+          "nodeImage": {
+            "value": "[variables('hpcNodeImageRef')]"
+          },
+          "rdmaDriverInstalled": {
+            "value": "[variables('rdmaDriverInstalled')]"
           },
           "headNodeName": {
             "value": "[parameters('headNodeName')]"
@@ -644,8 +681,11 @@
           "clusterFilesystem": {
             "value": "[parameters('clusterFilesystem')]"
           },
-          "storageAccountName": {
+          "acmStorageAccountName": {
             "value": "[variables('storageAccountName')]"
+          },
+          "acmStorageAccountResourceGroup": {
+            "value": "[parameters('storageAccountResourceGroup')]"
           },
           "publicIPCreateOption": {
             "value": "[parameters('publicIPCreateOption')]"

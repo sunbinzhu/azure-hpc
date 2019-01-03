@@ -36,10 +36,17 @@
         "description": "User for running HPC applications with shared home directory and SSH public key authentication setup.  This user cannot login from outside the cluster. Pick a valid username otherwise there will be a BadRequest error."
       }
     },
-    "hpcNodeImage": {
+    "nodeImage": {
       "type": "object",
       "metadata": {
         "description": "The VM image for the compute nodes"
+      }
+    },
+    "rdmaDriverInstalled": {
+      "defaultValue": false,
+      "type": "bool",
+      "metadata": {
+        "description": "Specify whether RDMA driver installed in the VM image"
       }
     },
     "headNodeName": {
@@ -50,7 +57,7 @@
       }
     },
     "headNodeSize": {
-      "defaultValue": "Standard_D4_v2",
+      "defaultValue": "Standard_D4_v3",
       "type": "string",
       "metadata": {
         "description": "Size of the head node."
@@ -78,7 +85,7 @@
       }
     },
     "workerNodeSize": {
-      "defaultValue": "Standard_D2_v2",
+      "defaultValue": "Standard_D4_v3",
       "type": "string",
       "metadata": {
         "description": "Size of the worker nodes."
@@ -149,10 +156,16 @@
         "description": "Path to use for BeeGFS storage."
       }
     },
-    "storageAccountName": {
+    "acmStorageAccountName": {
       "type": "string",
       "metadata": {
         "description": "Storage Account Name"
+      }
+    },
+    "acmStorageAccountResourceGroup": {
+      "type": "string",
+      "metadata": {
+        "description": "Resource group in which the storage account locates"
       }
     },
     "publicIPCreateOption": {
@@ -319,7 +332,7 @@
       "[uri(parameters('scriptBaseLocation'), concat('azuredeploy.sh', parameters('scriptBaseLocationSasToken')))]"
     ],
     "InstallFileUris": "[if(equals(variables('schedulerName'), 'Slurm'), variables('slurmInstallFileUris'), variables('pbsproInstallFileUris'))]",
-    "isHpcImage": "[if(contains(parameters('hpcNodeImage').offer, '-HPC'), 'Yes', 'No')]",
+    "isHpcImage": "[if(parameters('rdmaDriverInstalled'), 'Yes', 'No')]",
     "installationCLI": "[concat('bash azuredeploy.sh ', parameters('headNodeName'), ' ', parameters('workerNodeNamePrefix'), ' ', parameters('workerNodeCount'), ' ', parameters('hpcUserName'), ' ', variables('clusterFilesystem'), ' ', variables('clusterFilesystemStorageLocation'), ' ', variables('isHpcImage'), ' ', variables('schedulerName'), ' ', variables('schedulerVersion'), ' ', parameters('installEasybuild'))]"
   },
   "resources": [
@@ -408,7 +421,7 @@
               "privateIPAllocationMethod": "Static",
               "privateIPAddress": "[variables('networkSettings').statics.master]",
               "publicIPAddress": {
-                "id": "[resourceId(parameters('publicIPResourceGroupName'), 'Microsoft.Network/publicIPAddresses',variables('publicIPAddressName'))]"
+                "id": "[resourceId(parameters('publicIPResourceGroupName'), 'Microsoft.Network/publicIPAddresses', variables('publicIPAddressName'))]"
               },
               "subnet": {
                 "id": "[variables('subnetRef')]"
@@ -435,7 +448,7 @@
         "type": "SystemAssigned"
       },
       "tags": {
-        "StorageConfiguration": "[concat('{\"AccountName\":\"', parameters('storageAccountName'), '\" }')]"
+        "StorageConfiguration": "[concat('{\"AccountName\":\"', parameters('acmStorageAccountName'), '\" }')]"
       },
       "properties": {
         "availabilitySet": {
@@ -451,7 +464,7 @@
           "linuxConfiguration": "[if(empty(parameters('adminSshPublicKey')), json('null'), variables('linuxConfiguration'))]"
         },
         "storageProfile": {
-          "imageReference": "[parameters('hpcNodeImage')]",
+          "imageReference": "[parameters('nodeImage')]",
           "osDisk": {
             "createOption": "FromImage",
             "managedDisk": {
@@ -584,7 +597,7 @@
       "properties": {
         "roleDefinitionId": "/providers/Microsoft.Authorization/roleDefinitions/17d1049b-9a84-46fb-8f53-869881c3d3ab",
         "principalId": "[reference(concat(resourceId('Microsoft.Compute/virtualMachines/', parameters('headNodeName')), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]",
-        "scope": "[concat(subscription().id, '/resourcegroups/', resourceGroup().name)]"
+        "scope": "[concat(subscription().id, '/resourcegroups/', parameters('acmStorageAccountResourceGroup'))]"
       },
       "dependsOn": [
         "[concat('Microsoft.Compute/virtualMachines/', parameters('headNodeName'))]"
@@ -601,7 +614,7 @@
       "properties": {
         "roleDefinitionId": "/providers/Microsoft.Authorization/roleDefinitions/17d1049b-9a84-46fb-8f53-869881c3d3ab",
         "principalId": "[reference(concat(resourceId('Microsoft.Compute/virtualMachines/', concat(parameters('workerNodeNamePrefix'), copyindex())), '/providers/Microsoft.ManagedIdentity/Identities/default'), '2015-08-31-PREVIEW').principalId]",
-        "scope": "[concat(subscription().id, '/resourcegroups/', resourceGroup().name)]"
+        "scope": "[concat(subscription().id, '/resourcegroups/', parameters('acmStorageAccountResourceGroup'))]"
       },
       "dependsOn": [
         "[concat('Microsoft.Compute/virtualMachines/', parameters('workerNodeNamePrefix'), copyindex())]"
@@ -620,7 +633,7 @@
         "type": "SystemAssigned"
       },
       "tags": {
-        "StorageConfiguration": "[concat('{\"AccountName\":\"', parameters('storageAccountName'), '\" }')]"
+        "StorageConfiguration": "[concat('{\"AccountName\":\"', parameters('acmStorageAccountName'), '\" }')]"
       },
       "properties": {
         "availabilitySet": {
@@ -636,7 +649,7 @@
           "linuxConfiguration": "[if(empty(parameters('adminSshPublicKey')), json('null'), variables('linuxConfiguration'))]"
         },
         "storageProfile": {
-          "imageReference": "[parameters('hpcNodeImage')]",
+          "imageReference": "[parameters('nodeImage')]",
           "osDisk": {
             "createOption": "FromImage",
             "managedDisk": {

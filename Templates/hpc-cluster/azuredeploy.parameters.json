@@ -1,0 +1,66 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "portalDnsNameLabel": {
+      "value": "hpcacm"
+    },
+    "frontendServiceSku": {
+      "value": "S1 Standard"
+    },
+    "portalAnonymousAccess": {
+      "value": "Yes"
+    },
+    "frontendImageName": {
+      "value": "mcr.microsoft.com/hpcpack/hpcacm:frontend"
+    },
+    "jobMonitorImageName": {
+      "value": "mcr.microsoft.com/hpcpack/hpcacm:jobmonitor"
+    },
+    "taskDispatcherImageName": {
+      "value": "mcr.microsoft.com/hpcpack/hpcacm:taskdispatcher"
+    },
+    "dashboardImageName": {
+      "value": "mcr.microsoft.com/hpcpack/hpcacm:dashboard"
+    },
+    "jobMonitorCpuCores": {
+      "value": "1.0"
+    },
+    "jobMonitorMemoryInGb": {
+      "value": "1.5"
+    },
+    "taskDispatcherCpuCores": {
+      "value": "1.0"
+    },
+    "taskDispatcherMemoryInGb": {
+      "value": "1.5"
+    },
+    "dashboardCpuCores": {
+      "value": "1.0"
+    },
+    "dashboardMemoryInGb": {
+      "value": "1.5"
+    },
+    "cpuCores": {
+      "value": "1.0"
+    },
+    "memoryInGb": {
+      "value": "1.5"
+    },
+    "storageAccountName": {
+      "value": "evanchpcacmeastus"
+    },
+    "storageAccountResourceGroup": {
+      "value": "evanchpcacmeastus"
+    },
+    "storageAccountType": {
+      "value": "Standard_LRS"
+    },
+    "newOrExistingStorageAccount": {
+      "value": "existing"
+    },
+    "scheduler": {
+      "value": "None"
+    }
+  }
+}

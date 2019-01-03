@@ -3,6 +3,7 @@
   "version": "0.1.2-preview",
   "parameters": {
     "resourceTypes": [
+      "Microsoft.Compute/virtualMachines",
       "Microsoft.ContainerInstance/containerGroups",
       "Microsoft.Storage/storageAccounts",
       "Microsoft.Web/serverfarms",
@@ -52,7 +53,7 @@
                 "options": {
                   "text": "An Azure Web App will be created for your ACM portal. Select a pricing tier for the App Service plan which will be used by the portal.",
                   "link": {
-                    "label": "Learn more",
+                    "label": "Learn more about App Service Plan",
                     "uri": "https://docs.microsoft.com/en-us/azure/app-service/azure-web-sites-web-hosting-plans-in-depth-overview"
                   }
                 }
@@ -61,84 +62,44 @@
                 "name": "acmAppPriceTier",
                 "type": "Microsoft.Common.DropDown",
                 "label": "Pricing tier for ACM portal",
-                "defaultValue": "S1 Standard",
+                "defaultValue": "S1 Standard (100 ACU, 1.75 GB)",
                 "toolTip": "An Azure Web App will be created for your ACM portal, select the pricing tier for the App Service Plan",
                 "constraints": {
                   "allowedValues": [
                     {
-                      "label": "B1 Basic",
-                      "value": {
-                        "name": "B1",
-                        "tier": "Basic"
-                      }
+                      "label": "S1 Standard (100 ACU, 1.75 GB)",
+                      "value": "S1 Standard"
                     },
                     {
-                      "label": "B2 Basic",
-                      "value": {
-                        "name": "B2",
-                        "tier": "Basic"
-                      }
+                      "label": "S2 Standard (200 ACU, 3.50 GB)",
+                      "value": "S2 Standard"
                     },
                     {
-                      "label": "S1 Standard",
-                      "value": {
-                        "name": "S1",
-                        "tier": "Standard"
-                      }
+                      "label": "S3 Standard (400 ACU, 7 GB)",
+                      "value": "S3 Standard"
                     },
                     {
-                      "label": "S2 Standard",
-                      "value": {
-                        "name": "S2",
-                        "tier": "Standard"
-                      }
+                      "label": "P1V2 PremiumV2 (210 ACU, 3.5 GB)",
+                      "value": "P1v2 PremiumV2"
                     },
                     {
-                      "label": "P1 Premium",
-                      "value": {
-                        "name": "P1",
-                        "tier": "Premium"
-                      }
+                      "label": "P2V2 PremiumV2 (420 ACU, 7 GB)",
+                      "value": "P2v2 PremiumV2"
                     },
                     {
-                      "label": "P2 Premium",
-                      "value": {
-                        "name": "P2",
-                        "tier": "Premium"
-                      }
-                    },
-                    {
-                      "label": "P1V2 PremiumV2",
-                      "value": {
-                        "name": "P1v2",
-                        "tier": "PremiumV2"
-                      }
-                    },
-                    {
-                      "label": "P2V2 PremiumV2",
-                      "value": {
-                        "name": "P2v2",
-                        "tier": "PremiumV2"
-                      }
+                      "label": "P3V2 PremiumV2 (840 ACU, 14 GB)",
+                      "value": "P3v2 PremiumV2"
                     }
                   ]
                 }
-              }
-            ],
-            "visible": true
-          },
-          {
-            "name": "authentication",
-            "type": "Microsoft.Common.Section",
-            "label": "Authentication Settings",
-            "elements": [
+              },
               {
                 "name": "acmWebAppAuthText",
                 "type": "Microsoft.Common.TextBlock",
                 "options": {
-                  "text": "Specify how you want to configure the authentication of the ACM portal. If 'Configure later' is selected, you must manually configure the authentication setting of the Portal Web App before you can access it.",
+                  "text": "Select an authentication option for the ACM portal. If 'Configure later' is selected, you must manually configure the authentication setting of the Portal Web App before you can access it.",
                   "link": {
-                    "label": "Learn more about authentication",
+                    "label": "Learn more about ACM authentication",
                     "uri": "https://go.microsoft.com/fwlink/?linkid=2054782"
                   }
                 }
@@ -169,7 +130,7 @@
               {
                 "name": "authenMethodWarning",
                 "type": "Microsoft.Common.InfoBox",
-                "visible": "[equals(steps('portalSetting').authentication.authOption, 'anonymous')]",
+                "visible": "[equals(steps('portalSetting').frontend.authOption, 'anonymous')]",
                 "options": {
                   "icon": "Warning",
                   "text": "Anonymous access will be enabled on the ACM portal. Anyone can access your cluster without login."
@@ -180,7 +141,7 @@
                 "type": "Microsoft.Common.TextBox",
                 "label": "AAD application Id",
                 "toolTip": "The application Id for an existing AAD application which will be used to authenticate the login of ACM portal",
-                "visible": "[equals(steps('portalSetting').authentication.authOption, 'existing')]",
+                "visible": "[equals(steps('portalSetting').frontend.authOption, 'existing')]",
                 "constraints": {
                   "required": true,
                   "regex": "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$",
@@ -200,10 +161,10 @@
                 "type": "Microsoft.Common.TextBlock",
                 "visible": true,
                 "options": {
-                  "text": "Azure Container Instances will be created to run the ACM backend services. Specify the CPU and memory resources for the container group.",
+                  "text": "Azure Container Instances will be created to run the ACM backend services. Specify the CPU and memory resources for the container group according to the reginal resource limits.",
                   "link": {
-                    "label": "Region availability",
-                    "uri": "https://docs.microsoft.com/en-us/azure/container-instances/container-instances-quotas#service-quotas-and-limits"
+                    "label": "Regional resource limits",
+                    "uri": "https://go.microsoft.com/fwlink/?linkid=2055350"
                   }
                 }
               },
@@ -212,6 +173,7 @@
                 "type": "Microsoft.Common.DropDown",
                 "label": "Number of CPU cores",
                 "defaultValue": "2",
+                "toolTip": "Specify the number of CPU cores for the container group. Click 'Regional resource limits' above to learn the CPU limit for the current location.",
                 "constraints": {
                   "allowedValues": [
                     {
@@ -246,6 +208,7 @@
                 "type": "Microsoft.Common.DropDown",
                 "label": "Memory (GB)",
                 "defaultValue": "3.5",
+                "toolTip": "Specify the memory for the container group. Click 'Regional resource limits' above to learn the memory limit for the current location.",
                 "constraints": {
                   "allowedValues": [
                     {
@@ -279,18 +242,10 @@
             "visible": true
           },
           {
-            "name": "acmStorageText",
-            "type": "Microsoft.Common.TextBlock",
-            "visible": true,
-            "options": {
-              "text": "A new storage account is required for the ACM portal."
-            }
-          },
-          {
             "name": "acmStorageAccount",
             "type": "Microsoft.Storage.StorageAccountSelector",
             "label": "Storage account for ACM",
-            "toolTip": "The storage account for ACM",
+            "toolTip": "A storage account is required for the ACM portal.",
             "defaultValue": {
               "name": "[concat('hpcacmstg', string(rand(1, 999999999)))]",
               "type": "Standard_LRS"
@@ -303,7 +258,7 @@
               ]
             },
             "options": {
-              "hideExisting": true
+              "hideExisting": false
             },
             "visible": true
           }
@@ -322,9 +277,9 @@
             "name": "hpcClusterText",
             "type": "Microsoft.Common.TextBlock",
             "options": {
-              "text": "You can create a new HPC cluster with 'Slurm' or 'PBSPro OSS' scheduler and automatically register it to the ACM portal now, or manually register your existing HPC cluster later.",
+              "text": "You can create a new HPC cluster with 'Slurm' or 'PBSPro' scheduler and automatically register it to the ACM portal now, or manually register your existing HPC cluster later.",
               "link": {
-                "label": "Learn more",
+                "label": "Learn more about cluster registration",
                 "uri": "https://go.microsoft.com/fwlink/?linkid=2055058"
               }
             }
@@ -404,41 +359,62 @@
                   "allowedValues": [
                     {
                       "label": "CentOS-based 7.1",
-                      "value": {
-                        "publisher": "OpenLogic",
-                        "offer": "CentOS",
-                        "sku": "7.1",
-                        "version": "latest"
-                      }
+                      "value": "OpenLogic/CentOS/7.1"
+                    },
+                    {
+                      "label": "CentOS-based 7.2",
+                      "value": "OpenLogic/CentOS/7.2"
                     },
                     {
                       "label": "CentOS-based 7.3",
-                      "value": {
-                        "publisher": "OpenLogic",
-                        "offer": "CentOS",
-                        "sku": "7.3",
-                        "version": "latest"
-                      }
+                      "value": "OpenLogic/CentOS/7.3"
+                    },
+                    {
+                      "label": "CentOS-based 7.4",
+                      "value": "OpenLogic/CentOS/7.4"
+                    },
+                    {
+                      "label": "CentOS-based 7.5",
+                      "value": "OpenLogic/CentOS/7.5"
                     },
                     {
                       "label": "CentOS-based 7.1 HPC",
-                      "value": {
-                        "publisher": "OpenLogic",
-                        "offer": "CentOS-HPC",
-                        "sku": "7.1",
-                        "version": "latest"
-                      }
+                      "value": "OpenLogic/CentOS-HPC/7.1:RDMA"
                     },
                     {
                       "label": "CentOS-based 7.3 HPC",
-                      "value": {
-                        "publisher": "OpenLogic",
-                        "offer": "CentOS-HPC",
-                        "sku": "7.3",
-                        "version": "latest"
-                      }
+                      "value": "OpenLogic/CentOS-HPC/7.3:RDMA"
+                    },
+                    {
+                      "label": "CentOS-based 7.4 HPC",
+                      "value": "OpenLogic/CentOS-HPC/7.4:RDMA"
+                    },
+                    {
+                      "label": "Other CentOS 7.x Image",
+                      "value": "other"
                     }
                   ]
+                }
+              },
+              {
+                "name": "otherClusterNodeImage",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Other VM Image",
+                "toolTip": "Specify the CentOS 7.x VM image in the format of 'ImagePublisher/ImageOffer/ImageSku' for Marketplace image or 'ResourceGroupName/ImageName' for private image.",
+                "visible": "[equals(steps('clusterSetting').clusterBasic.clusterNodeImage, 'other')]",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[^/]+/[^/]+(/[^/]+)?$",
+                  "validationMessage": "'ImagePublisher/ImageOffer/ImageSku' for Marketplace image or 'ResourceGroupName/ImageName' for private image."
+                }
+              },
+              {
+                "name": "clusterNodeImageWarning",
+                "type": "Microsoft.Common.InfoBox",
+                "visible": "[contains(steps('clusterSetting').clusterBasic.clusterNodeImage, ':RDMA')]",
+                "options": {
+                  "icon": "Info",
+                  "text": "The VM image requires a VM size with RDMA support."
                 }
               },
               {
@@ -647,7 +623,7 @@
                 "type": "Microsoft.Common.OptionsGroup",
                 "label": "Specify advanced settings",
                 "defaultValue": "No",
-                "toolTip": "Specify whether you want to create an HPC cluster",
+                "toolTip": "Specify advanced settings",
                 "constraints": {
                   "allowedValues": [
                     {
@@ -885,28 +861,36 @@
     "outputs": {
       "portalDnsNameLabel": "[basics('portalDnsNameLabel')]",
       "appServicePlanPricingTier": "[steps('portalSetting').frontend.acmAppPriceTier]",
-      "portalAnonymousAccess": "[equals(steps('portalSetting').authentication.authOption, 'anonymous')]",
-      "aadAuthApplicationId": "[steps('portalSetting').authentication.authAadApplicationId]",
+      "portalAnonymousAccess": "[equals(steps('portalSetting').frontend.authOption, 'anonymous')]",
+      "aadAuthApplicationId": "[steps('portalSetting').frontend.authAadApplicationId]",
       "storageAccountType": "[steps('portalSetting').acmStorageAccount.type]",
       "storageAccountName": "[steps('portalSetting').acmStorageAccount.name]",
-      "frontendImageName": "louirobert/hpc-acm-frontend:v1.0.0",
+      "storageAccountResourceGroup": "[steps('portalSetting').acmStorageAccount.resourceGroup]",
+      "newOrExistingStorageAccount": "[steps('portalSetting').acmStorageAccount.newOrExisting]",
+      "frontendImageName": "mcr.microsoft.com/hpcpack/hpcacm:frontend",
       "jobMonitorImageName": "mcr.microsoft.com/hpcpack/hpcacm:jobmonitor",
+      "dashboardImageName": "mcr.microsoft.com/hpcpack/hpcacm:dashboard",
+      "taskDispatcherImageName": "mcr.microsoft.com/hpcpack/hpcacm:taskdispatcher",
       "jobMonitorCpuCores": "[steps('portalSetting').backend.acmBackendCpuCores.jobMonitor]",
       "jobMonitorMemoryInGb": "[steps('portalSetting').backend.acmBackendMemory.jobMonitor]",
-      "taskDispatcherImageName": "mcr.microsoft.com/hpcpack/hpcacm:taskdispatcher",
       "taskDispatcherCpuCores": "[steps('portalSetting').backend.acmBackendCpuCores.taskDispatcher]",
       "taskDispatcherMemoryInGb": "[steps('portalSetting').backend.acmBackendMemory.jobMonitor]",
-      "dashboardImageName": "mcr.microsoft.com/hpcpack/hpcacm:dashboard",
       "dashboardCpuCores": "[steps('portalSetting').backend.acmBackendCpuCores.dashBoard]",
       "dashboardMemoryInGb": "[steps('portalSetting').backend.acmBackendMemory.jobMonitor]",
       "scheduler": "[steps('clusterSetting').clusterBasic.schedulerType]",
       "adminUserName": "[steps('clusterSetting').clusterBasic.adminUsername]",
       "adminPassword": "[steps('clusterSetting').clusterBasic.adminPassword.password]",
       "adminSshPublicKey": "[steps('clusterSetting').clusterBasic.adminPassword.sshPublicKey]",
-      "hpcNodeImage": "[steps('clusterSetting').clusterBasic.clusterNodeImage]",
+      "hpcNodeImage": "[coalesce(steps('clusterSetting').clusterBasic.otherClusterNodeImage, steps('clusterSetting').clusterBasic.clusterNodeImage)]",
       "headNodeName": "[steps('clusterSetting').clusterAdvanced.headNodeName]",
       "headNodeSize": "[steps('clusterSetting').clusterBasic.headNodeVMSize]",
       "headNodeOsDiskType": "[steps('clusterSetting').clusterBasic.headNodeOsDiskType]",
+      "publicIPCreateOption": "[steps('clusterSetting').clusterBasic.headNodePublicIP.newOrExistingOrNone]",
+      "publicIPResourceGroupName": "[steps('clusterSetting').clusterBasic.headNodePublicIP.resourceGroup]",
+      "publicIPName": "[steps('clusterSetting').clusterBasic.headNodePublicIP.name]",
+      "publicIPSku": "[steps('clusterSetting').clusterBasic.headNodePublicIP.sku]",
+      "publicIPDNSNameLabel": "[steps('clusterSetting').clusterBasic.headNodePublicIP.domainNameLabel]",
+      "publicIPAllocationMethod": "[steps('clusterSetting').clusterBasic.headNodePublicIP.publicIPAllocationMethod]",
       "headNodeDataDiskType": "[steps('clusterSetting').dataDisks.headNodeDataDiskType]",
       "workerNodeNamePrefix": "[steps('clusterSetting').clusterAdvanced.workerNodeNamePrefix]",
       "workerNodeSize": "[steps('clusterSetting').clusterBasic.workerNodeVMSize]",
