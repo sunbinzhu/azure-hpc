@@ -41,12 +41,6 @@
     "dashboardMemoryInGb": {
       "value": "1.5"
     },
-    "cpuCores": {
-      "value": "1.0"
-    },
-    "memoryInGb": {
-      "value": "1.5"
-    },
     "storageAccountName": {
       "value": "evanchpcacmeastus"
     },
