@@ -325,7 +325,7 @@ install_slurm()
 #
 install_pbspro()
 {
-    yum install compat-libical1 expat libedit postgresql-server python sendmail sudo \
+    yum install -y compat-libical1 expat libedit postgresql-server python sendmail \
       tcl tk libical libtool libtool-ltdl hwloc-libs perl swig expat-devel libXext \
       libXft perl-Env perl-Switch hesiod procmail libICE libSM
 
