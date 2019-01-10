@@ -77,34 +77,6 @@
         "description": "Head node OS Disk type"
       }
     },
-    "workerNodeNamePrefix": {
-      "defaultValue": "worker",
-      "type": "string",
-      "metadata": {
-        "description": "The VM name prefix of the work nodes."
-      }
-    },
-    "workerNodeSize": {
-      "defaultValue": "Standard_D4_v3",
-      "type": "string",
-      "metadata": {
-        "description": "VM Size of the worker nodes."
-      }
-    },
-    "workerNodeOsDiskType": {
-      "defaultValue": "Standard_LRS",
-      "type": "string",
-      "metadata": {
-        "description": "Worker node OS disk type"
-      }
-    },
-    "workerNodeCount": {
-      "defaultValue": 2,
-      "type": "int",
-      "metadata": {
-        "description": "This template creates N worker node. Use workerNodeCount to specify that N."
-      }
-    },
     "headNodeDataDiskSize": {
       "defaultValue": 128,
       "type": "int",
@@ -124,6 +96,34 @@
       "type": "string",
       "metadata": {
         "description": "Head node data disk type"
+      }
+    },
+    "workerNodeNamePrefix": {
+      "defaultValue": "worker",
+      "type": "string",
+      "metadata": {
+        "description": "The VM name prefix of the work nodes."
+      }
+    },
+    "workerNodeCount": {
+      "defaultValue": 2,
+      "type": "int",
+      "metadata": {
+        "description": "This template creates N worker node. Use workerNodeCount to specify that N."
+      }
+    },
+    "workerNodeSize": {
+      "defaultValue": "Standard_D4_v3",
+      "type": "string",
+      "metadata": {
+        "description": "VM Size of the worker nodes."
+      }
+    },
+    "workerNodeOsDiskType": {
+      "defaultValue": "Standard_LRS",
+      "type": "string",
+      "metadata": {
+        "description": "Worker node OS disk type"
       }
     },
     "workerNodeDataDiskSize": {

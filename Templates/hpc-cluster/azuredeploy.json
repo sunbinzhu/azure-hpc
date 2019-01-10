@@ -610,8 +610,14 @@
           "headNodeOsDiskType": {
             "value": "[parameters('headNodeOsDiskType')]"
           },
+          "headNodeDataDiskCount": {
+            "value": "[parameters('headNodeDataDiskCount')]"
+          },
           "headNodeDataDiskType": {
             "value": "[parameters('headNodeDataDiskType')]"
+          },
+          "headNodeDataDiskSize": {
+            "value": "[parameters('dataDiskSize')]"
           },
           "workerNodeNamePrefix": {
             "value": "[parameters('workerNodeNamePrefix')]"
@@ -630,9 +636,6 @@
           },
           "workerNodeDataDiskType": {
             "value": "[parameters('workerNodeDataDiskType')]"
-          },
-          "headNodeDataDiskSize": {
-            "value": "[parameters('dataDiskSize')]"
           },
           "workerNodeDataDiskSize": {
             "value": "[parameters('dataDiskSize')]"
