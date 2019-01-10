@@ -18,6 +18,9 @@ fi
 #Base directory of this script
 SCRIPT_BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+#Get Data Disk Count
+DATADISK_COUNT=$(ls /dev/ | egrep '^sd([c-z]|[a-z]{2,})$' | wc -w)
+
 # Set user args
 MASTER_HOSTNAME=$1
 WORKER_HOSTNAME_PREFIX=$2
@@ -105,7 +108,7 @@ install_pkgs()
 }
 
 # Partitions all data disks attached to the VM and creates
-# a RAID-0 volume with them.
+# a RAID-0 volume with them if there are more than 1 data disks.
 #
 setup_data_disks()
 {
@@ -113,8 +116,12 @@ setup_data_disks()
     filesystem="$2"
     createdPartitions=""
 
-    # Loop through and partition disks until not found
-    for disk in sdc sdd sde sdf sdg sdh sdi sdj sdk sdl sdm sdn sdo sdp sdq sdr; do
+    if [[ "$DATADISK_COUNT" == "0" ]]; then
+        return 0
+    fi
+    
+    # Loop through and partition disks
+    for disk in $(ls /dev/ | egrep '^sd([c-z]|[a-z]{2,})$'); do
         fdisk -l /dev/$disk || break
         fdisk /dev/$disk << EOF
 n
@@ -130,23 +137,24 @@ EOF
     done
     
     sleep 30
-
-    # Create RAID-0 volume
-    if [ -n "$createdPartitions" ]; then
-        devices=`echo $createdPartitions | wc -w`
-        mdadm --create /dev/md10 --level 0 --raid-devices $devices $createdPartitions
-        if [ "$filesystem" == "xfs" ]; then
-            mkfs -t $filesystem /dev/md10
-            echo "/dev/md10 $mountPoint $filesystem rw,noatime,attr2,inode64,nobarrier,sunit=1024,swidth=4096,nofail 0 2" >> /etc/fstab
-        else
-            mkfs -t $filesystem /dev/md10
-            echo "/dev/md10 $mountPoint $filesystem defaults,nofail 0 2" >> /etc/fstab
-        fi
-        
-        sleep 15
-        
-        mount /dev/md10
+    
+    if [[ "$DATADISK_COUNT" == "1" ]]; then
+        devName=/dev/$(ls /dev/ | egrep '^sd([c-z]|[a-z]{2,})1$')
+    else
+        # Create RAID-0 volume
+        devName=/dev/md10
+        mdadm --create $devName --level 0 --raid-devices $DATADISK_COUNT $createdPartitions
     fi
+    
+    mkfs -t $filesystem $devName
+    if [ "$filesystem" == "xfs" ]; then
+        echo "$devName $mountPoint $filesystem rw,noatime,attr2,inode64,nobarrier,sunit=1024,swidth=4096,nofail 0 2" >> /etc/fstab
+    else
+        echo "$devName $mountPoint $filesystem defaults,nofail 0 2" >> /etc/fstab
+    fi
+
+    sleep 15
+    mount $devName
 }
 
 # Creates and exports two shares on the master nodes:
@@ -172,8 +180,8 @@ setup_shares()
         echo "$SHARE_NFS    *(rw,async)" >> /etc/exports
         systemctl enable rpcbind || echo "Already enabled"
         systemctl enable nfs-server || echo "Already enabled"
-        systemctl start rpcbind || echo "Already enabled"
-        systemctl start nfs-server || echo "Already enabled"
+        systemctl restart rpcbind
+        systemctl restart nfs-server
 
         mount -a
         mount
@@ -219,7 +227,7 @@ install_munge()
     chmod 0400 /etc/munge/munge.key
     
     systemctl enable munge
-    systemctl start munge
+    systemctl restart munge
 }
 
 # Installs and configures slurm.conf on the node.
@@ -308,13 +316,13 @@ install_slurm()
         \cp -rf "$SCRIPT_BASEDIR/slurmctld.service" /usr/lib/systemd/system
         systemctl daemon-reload
         systemctl enable slurmctld
-        systemctl start slurmctld
+        systemctl restart slurmctld
         systemctl status slurmctld
     else
         \cp -rf "$SCRIPT_BASEDIR/slurmd.service" /usr/lib/systemd/system
         systemctl daemon-reload
         systemctl enable slurmd
-        systemctl start slurmd
+        systemctl restart slurmd
         systemctl status slurmd
     fi
 }
@@ -472,16 +480,17 @@ install_easybuild()
         return 0
     fi
 
-    yum -y install Lmod python-devel python-pip gcc gcc-c++ patch unzip tcl tcl-devel libibverbs libibverbs-devel
+    yum install -y git Lmod openmpi python-devel python-pip gcc gcc-c++ patch unzip tcl tcl-devel libibverbs libibverbs-devel
+    pip install --upgrade pip
     pip install vsc-base
 
     EASYBUILD_HOME=$SHARE_HOME/$HPC_USER/EasyBuild
 
     if is_master; then
-        su - $HPC_USER -c "pip install --install-option --prefix=$EASYBUILD_HOME https://github.com/hpcugent/easybuild-framework/archive/easybuild-framework-v2.5.0.tar.gz"
+        su - $HPC_USER -c "pip install --install-option --prefix=$EASYBUILD_HOME https://github.com/easybuilders/easybuild-framework/archive/easybuild-framework-v3.8.0.tar.gz"
 
         # Add Lmod to the HPC users path
-        echo 'export PATH=/usr/lib64/openmpi/bin:/usr/share/lmod/6.0.15/libexec:$PATH' >> $SHARE_HOME/$HPC_USER/.bashrc
+        echo 'export PATH=/usr/lib64/openmpi/bin:/usr/share/lmod/lmod/libexec:$PATH' >> $SHARE_HOME/$HPC_USER/.bashrc
 
         # Setup Easybuild configuration and paths
         echo 'export PATH=$HOME/EasyBuild/bin:$PATH' >> $SHARE_HOME/$HPC_USER/.bashrc
@@ -490,12 +499,16 @@ install_easybuild()
         echo "export EASYBUILD_MODULES_TOOL=Lmod" >> $SHARE_HOME/$HPC_USER/.bashrc
         echo "export EASYBUILD_INSTALLPATH=$EASYBUILD_HOME" >> $SHARE_HOME/$HPC_USER/.bashrc
         echo "export EASYBUILD_DEBUG=1" >> $SHARE_HOME/$HPC_USER/.bashrc
-        echo "source /usr/share/lmod/6.0.15/init/bash" >> $SHARE_HOME/$HPC_USER/.bashrc
+        echo "source /usr/share/lmod/lmod/init/bash" >> $SHARE_HOME/$HPC_USER/.bashrc
     fi
 }
 
 install_cfs()
 {
+    if [[ "$DATADISK_COUNT" == "0" ]]; then
+        return 0
+    fi
+    
     if [ "$CFS" == "BeeGFS" ]; then
         wget -O beegfs-rhel7.repo http://www.beegfs.com/release/latest-stable/dists/beegfs-rhel7.repo
         mv beegfs-rhel7.repo /etc/yum.repos.d/beegfs.repo

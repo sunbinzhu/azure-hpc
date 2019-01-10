@@ -26,14 +26,21 @@
       "defaultValue": "",
       "type": "securestring",
       "metadata": {
-        "description": "An RSA SSH public key for the admin user."
+        "description": "An RSA SSH public key for the admin user. Either adminPassword or adminSshPublicKey must be specified"
       }
     },
     "hpcUserName": {
       "defaultValue": "hpcuser",
       "type": "string",
       "metadata": {
-        "description": "User for running HPC applications with shared home directory and SSH public key authentication setup.  This user cannot login from outside the cluster. Pick a valid username otherwise there will be a BadRequest error."
+        "description": "User for running HPC applications with shared home directory and SSH public key authentication setup.  This user cannot login from outside the cluster if 'hpcUserSshPublicKey' not specified. Pick a valid username otherwise there will be a BadRequest error."
+      }
+    },
+    "hpcUserSshPublicKey": {
+      "defaultValue": "",
+      "type": "securestring",
+      "metadata": {
+        "description": "An RSA SSH public key for the HPC User. An RSA key pair will be automatically generated if not specified"
       }
     },
     "nodeImage": {
@@ -60,21 +67,14 @@
       "defaultValue": "Standard_D4_v3",
       "type": "string",
       "metadata": {
-        "description": "Size of the head node."
+        "description": "VM Size of the head node."
       }
     },
     "headNodeOsDiskType": {
       "defaultValue": "Standard_LRS",
       "type": "string",
       "metadata": {
-        "description": "Head node OS Disk Account type"
-      }
-    },
-    "headNodeDataDiskType": {
-      "defaultValue": "Standard_LRS",
-      "type": "string",
-      "metadata": {
-        "description": "Head node OS Disk Account type"
+        "description": "Head node OS Disk type"
       }
     },
     "workerNodeNamePrefix": {
@@ -88,7 +88,14 @@
       "defaultValue": "Standard_D4_v3",
       "type": "string",
       "metadata": {
-        "description": "Size of the worker nodes."
+        "description": "VM Size of the worker nodes."
+      }
+    },
+    "workerNodeOsDiskType": {
+      "defaultValue": "Standard_LRS",
+      "type": "string",
+      "metadata": {
+        "description": "Worker node OS disk type"
       }
     },
     "workerNodeCount": {
@@ -98,39 +105,46 @@
         "description": "This template creates N worker node. Use workerNodeCount to specify that N."
       }
     },
+    "headNodeDataDiskSize": {
+      "defaultValue": 128,
+      "type": "int",
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the head node VM."
+      }
+    },
     "headNodeDataDiskCount": {
       "defaultValue": 0,
       "type": "int",
       "metadata": {
-        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+        "description": "The count of data disks attached to the head node VM.  A RAID-0 volume is created with all data disks if the count is 2 or more."
+      }
+    },
+    "headNodeDataDiskType": {
+      "defaultValue": "Standard_LRS",
+      "type": "string",
+      "metadata": {
+        "description": "Head node data disk type"
+      }
+    },
+    "workerNodeDataDiskSize": {
+      "defaultValue": 128,
+      "type": "int",
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the worker node VM."
       }
     },
     "workerNodeDataDiskCount": {
       "defaultValue": 0,
       "type": "int",
       "metadata": {
-        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
-      }
-    },
-    "workerNodeOsDiskType": {
-      "defaultValue": "Standard_LRS",
-      "type": "string",
-      "metadata": {
-        "description": "Head node OS Disk Account type"
+        "description": "The count of data disks attached to each worker node VM.  A RAID-0 volume is created with all data disks if the count is 2 or more."
       }
     },
     "workerNodeDataDiskType": {
       "defaultValue": "Standard_LRS",
       "type": "string",
       "metadata": {
-        "description": "Head node OS Disk Account type"
-      }
-    },
-    "dataDiskSize": {
-      "defaultValue": 128,
-      "type": "int",
-      "metadata": {
-        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+        "description": "Worker node data disk type"
       }
     },
     "installEasybuild": {
@@ -159,13 +173,13 @@
     "acmStorageAccountName": {
       "type": "string",
       "metadata": {
-        "description": "Storage Account Name"
+        "description": "ACM Storage Account Name"
       }
     },
     "acmStorageAccountResourceGroup": {
       "type": "string",
       "metadata": {
-        "description": "Resource group in which the storage account locates"
+        "description": "Resource group in which the ACM storage account locates"
       }
     },
     "publicIPCreateOption": {
@@ -279,7 +293,7 @@
           "input": {
             "lun": "[copyIndex('hnDatadisks')]",
             "createOption": "Empty",
-            "diskSizeGB": "[parameters('dataDiskSize')]",
+            "diskSizeGB": "[parameters('headNodeDataDiskSize')]",
             "managedDisk": {
               "storageAccountType": "[parameters('headNodeDataDiskType')]"
             }
@@ -295,7 +309,7 @@
           "input": {
             "lun": "[copyIndex('wnDatadisks')]",
             "createOption": "Empty",
-            "diskSizeGB": "[parameters('dataDiskSize')]",
+            "diskSizeGB": "[parameters('workerNodeDataDiskSize')]",
             "managedDisk": {
               "storageAccountType": "[parameters('workerNodeDataDiskType')]"
             }
@@ -303,18 +317,16 @@
         }
       ]
     },
-    "sshKeyPath": "[concat('/home/',parameters('adminUsername'),'/.ssh/authorized_keys')]",
-    "linuxConfiguration": {
-      "disablePasswordAuthentication": "[empty(parameters('adminPassword'))]",
-      "ssh": {
-        "publicKeys": [
-          {
-            "path": "[variables('sshKeyPath')]",
-            "keyData": "[parameters('adminSshPublicKey')]"
-          }
-        ]
-      }
+    "adminSshSetting": {
+      "path": "[concat('/home/',parameters('adminUsername'),'/.ssh/authorized_keys')]",
+      "keyData": "[parameters('adminSshPublicKey')]"
     },
+    "hpcUserSshSetting": {
+      "path": "[concat('/root/', parameters('hpcUserName'), '.ssh.authorized_keys')]",
+      "keyData": "[parameters('hpcUserSshPublicKey')]"
+    },
+    "adminPublicKeys": "[if(empty(parameters('adminSshPublicKey')), variables('emptyArray'), array(variables('adminSshSetting')))]",
+    "allPublicKeys": "[if(empty(parameters('hpcUserSshPublicKey')), variables('adminPublicKeys'), concat(variables('adminPublicKeys'), array(variables('hpcUserSshSetting'))))]",
     "workerNodeNicNamePrefix": "[concat('nic-', parameters('workerNodeNamePrefix'))]",
     "clusterFilesystem": "[split(parameters('clusterFilesystem'), ':')[0]]",
     "clusterFilesystemStorageLocation": "[split(parameters('clusterFilesystem'), ':')[1]]",
@@ -461,7 +473,12 @@
           "computername": "[parameters('headNodeName')]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[if(empty(parameters('adminPassword')), json('null'), parameters('adminPassword'))]",
-          "linuxConfiguration": "[if(empty(parameters('adminSshPublicKey')), json('null'), variables('linuxConfiguration'))]"
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": "[empty(parameters('adminPassword'))]",
+            "ssh": {
+              "publicKeys": "[variables('allPublicKeys')]"
+            }
+          }
         },
         "storageProfile": {
           "imageReference": "[parameters('nodeImage')]",
@@ -646,7 +663,12 @@
           "computername": "[concat(parameters('workerNodeNamePrefix'), copyindex())]",
           "adminUsername": "[parameters('adminUsername')]",
           "adminPassword": "[if(empty(parameters('adminPassword')), json('null'), parameters('adminPassword'))]",
-          "linuxConfiguration": "[if(empty(parameters('adminSshPublicKey')), json('null'), variables('linuxConfiguration'))]"
+          "linuxConfiguration": {
+            "disablePasswordAuthentication": "[empty(parameters('adminPassword'))]",
+            "ssh": {
+              "publicKeys": "[variables('adminPublicKeys')]"
+            }
+          }
         },
         "storageProfile": {
           "imageReference": "[parameters('nodeImage')]",

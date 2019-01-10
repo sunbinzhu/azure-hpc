@@ -197,7 +197,7 @@
       "defaultValue": "",
       "type": "securestring",
       "metadata": {
-        "description": "Admin password. Pick a complex password with uppercase letters, lowercase letters, digits, and symbols. The password should not be longer than 16. Otherwise you'll get a BadRequest error."
+        "description": "Admin password. Pick a complex password with uppercase letters, lowercase letters, digits, and symbols."
       }
     },
     "adminSshPublicKey": {
@@ -211,7 +211,14 @@
       "defaultValue": "hpcuser",
       "type": "string",
       "metadata": {
-        "description": "User for running HPC applications with shared home directory and SSH public key authentication setup."
+        "description": "User for running HPC applications with shared home directory and SSH public key authentication setup.  This user cannot login from outside the cluster if 'hpcUserSshPublicKey' not specified. Pick a valid username otherwise there will be a BadRequest error."
+      }
+    },
+    "hpcUserSshPublicKey": {
+      "defaultValue": "",
+      "type": "securestring",
+      "metadata": {
+        "description": "An RSA SSH public key for the HPC User. An RSA key pair will be automatically generated if not specified"
       }
     },
     "hpcNodeImage": {
@@ -232,14 +239,14 @@
       "defaultValue": "Standard_D4_v3",
       "type": "string",
       "metadata": {
-        "description": "Size of the head node."
+        "description": "VM Size of the head node."
       }
     },
     "headNodeOsDiskType": {
       "defaultValue": "Standard_LRS",
       "type": "string",
       "metadata": {
-        "description": "Head node OS Disk Account type"
+        "description": "Head node OS disk type"
       }
     },
     "workerNodeNamePrefix": {
@@ -253,14 +260,14 @@
       "defaultValue": "Standard_D4_v3",
       "type": "string",
       "metadata": {
-        "description": "Size of the worker nodes."
+        "description": "VM Size of the worker nodes."
       }
     },
     "workerNodeOsDiskType": {
       "defaultValue": "Standard_LRS",
       "type": "string",
       "metadata": {
-        "description": "Head node OS Disk Account type"
+        "description": "Worker node OS Disk type"
       }
     },
     "workerNodeCount": {
@@ -270,39 +277,46 @@
         "description": "This template creates N worker node. Use workerNodeCount to specify that N."
       }
     },
-    "dataDiskSize": {
+    "headNodeDataDiskSize": {
       "defaultValue": 128,
       "type": "int",
       "metadata": {
-        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+        "description": "The size in GB of each data disk that is attached to the head node VM."
       }
     },
     "headNodeDataDiskCount": {
       "defaultValue": 0,
       "type": "int",
       "metadata": {
-        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+        "description": "The count of data disks attached to the head node VM.  A RAID-0 volume is created with all data disks if the count is 2 or more."
       }
     },
     "headNodeDataDiskType": {
       "defaultValue": "Standard_LRS",
       "type": "string",
       "metadata": {
-        "description": "Head node Data Disk Account type"
+        "description": "Head node data disk type"
+      }
+    },
+    "workerNodeDataDiskSize": {
+      "defaultValue": 128,
+      "type": "int",
+      "metadata": {
+        "description": "The size in GB of each data disk that is attached to the worker node VM."
       }
     },
     "workerNodeDataDiskCount": {
       "defaultValue": 0,
       "type": "int",
       "metadata": {
-        "description": "The size in GB of each data disk that is attached to the VM.  A RAID-0 volume is created with all data disks that is dataDiskSize * dataDiskCount in size."
+        "description": "The count of data disks attached to each worker node VM.  A RAID-0 volume is created with all data disks if the count is 2 or more."
       }
     },
     "workerNodeDataDiskType": {
       "defaultValue": "Standard_LRS",
       "type": "string",
       "metadata": {
-        "description": "Head node OS Disk Account type"
+        "description": "Worker node data disk type"
       }
     },
     "clusterFilesystem": {
@@ -636,6 +650,9 @@
           "hpcUserName": {
             "value": "[parameters('hpcUserName')]"
           },
+          "hpcUserSshPublicKey": {
+            "value": "[parameters('hpcUserSshPublicKey')]"
+          },
           "nodeImage": {
             "value": "[variables('hpcNodeImageRef')]"
           },
@@ -651,6 +668,12 @@
           "headNodeOsDiskType": {
             "value": "[parameters('headNodeOsDiskType')]"
           },
+          "headNodeDataDiskSize": {
+            "value": "[parameters('headNodeDataDiskSize')]"
+          },
+          "headNodeDataDiskCount": {
+            "value": "[parameters('headNodeDataDiskCount')]"
+          },
           "headNodeDataDiskType": {
             "value": "[parameters('headNodeDataDiskType')]"
           },
@@ -663,17 +686,17 @@
           "workerNodeCount": {
             "value": "[parameters('workerNodeCount')]"
           },
-          "workerNodeDataDiskCount": {
-            "value": "[parameters('workerNodeDataDiskCount')]"
-          },
           "workerNodeOsDiskType": {
             "value": "[parameters('workerNodeOsDiskType')]"
           },
+          "workerNodeDataDiskSize": {
+            "value": "[parameters('workerNodeDataDiskSize')]"
+          },
+          "workerNodeDataDiskCount": {
+            "value": "[parameters('workerNodeDataDiskCount')]"
+          },
           "workerNodeDataDiskType": {
             "value": "[parameters('workerNodeDataDiskType')]"
-          },
-          "dataDiskSize": {
-            "value": "[parameters('dataDiskSize')]"
           },
           "installEasybuild": {
             "value": "[parameters('installEasybuild')]"
