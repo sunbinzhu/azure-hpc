@@ -54,7 +54,7 @@
                   "text": "An Azure Web App will be created for your ACM portal. Select a pricing tier for the App Service plan which will be used by the portal.",
                   "link": {
                     "label": "Learn more about App Service Plan",
-                    "uri": "https://docs.microsoft.com/en-us/azure/app-service/azure-web-sites-web-hosting-plans-in-depth-overview"
+                    "uri": "https://go.microsoft.com/fwlink/?linkid=2058350"
                   }
                 }
               },
@@ -409,16 +409,16 @@
                 }
               },
               {
-                "name": "clusterNodeImageWarning",
+                "name": "clusterNodeImageInfo",
                 "type": "Microsoft.Common.InfoBox",
                 "visible": "[contains(steps('clusterSetting').clusterBasic.clusterNodeImage, ':RDMA')]",
                 "options": {
                   "icon": "Info",
-                  "text": "The VM image requires a VM size with RDMA support."
+                  "text": "The VM image requires RDMA capable VM size for all nodes."
                 }
               },
               {
-                "name": "adminUsername",
+                "name": "adminUserName",
                 "type": "Microsoft.Compute.UserNameTextBox",
                 "label": "Administrator User name",
                 "defaultValue": "azureuser",
@@ -466,6 +466,18 @@
                 }
               },
               {
+                "name": "headNodeName",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Head node name",
+                "toolTip": "The virtual machine name for the head node",
+                "defaultValue": "master",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[a-zA-Z][a-zA-Z0-9-]{1,11}$",
+                  "validationMessage": "Must be no more than 12 characters, begin with a letter, and contain only letters, numbers and hyphens"
+                }
+              },
+              {
                 "name": "headNodeVMSize",
                 "type": "Microsoft.Compute.SizeSelector",
                 "label": "Head node VM Size",
@@ -473,10 +485,13 @@
                 "recommendedSizes": [
                   "Standard_D8s_v3",
                   "Standard_DS4_v2",
-                  "Standard_DS4",
                   "Standard_F8s",
-                  "Standard_A8_v2",
-                  "Standard_A4"
+                  "Standard_D4s_v3",
+                  "Standard_DS3_v2",
+                  "Standard_H16r",
+                  "Standard_H8",
+                  "Standard_H16",
+                  "Standard_DS4"
                 ],
                 "constraints": {
                   "excludedSizes": [
@@ -520,7 +535,7 @@
                 "type": "Microsoft.Common.DropDown",
                 "label": "OS disk type for head node",
                 "defaultValue": "Premium SSD",
-                "toolTip": "Premium disks (SSD) are backed by solid state drives and offer consistent, low-latency performance. They provide the best balance between price and performance, and are ideal for I/O-intensive applications and production workloads. Standard disks (HDD) are backed by magnetic drives and are preferable for applications where data is accessed infrequently.",
+                "toolTip": "Premium SSD disks offer high-performance, low-latency disk support for I/O-intensive applications and production workloads. To use Premium SSD disks, you must choose VM Size with premium storage support. Standard SSD Disks are a cost effective storage option optimized for workloads that need consistent performance at lower IOPS levels. Use Standard HDD disks for Dev/Test scenarios and less critical workloads at lowest cost.",
                 "constraints": {
                   "allowedValues": [
                     {
@@ -544,7 +559,19 @@
                 "visible": "[and(not(contains(toLower(replace(string(steps('clusterSetting').clusterBasic.headNodeVMSize), 'Standard_', '')), 's')), equals(steps('clusterSetting').clusterBasic.headNodeOsDiskType, 'Premium_LRS'))]",
                 "options": {
                   "icon": "Error",
-                  "text": "The VM size for head node does not support Premium disk."
+                  "text": "The VM size for head node does not support Premium SSD disk."
+                }
+              },
+              {
+                "name": "workerNodeNamePrefix",
+                "type": "Microsoft.Common.TextBox",
+                "label": "Worker node name prefix",
+                "toolTip": "The name prefix of the worker nodes. For example, if 'worker' is specified, the worker node names will be 'worker0', 'worker1', ...",
+                "defaultValue": "worker",
+                "constraints": {
+                  "required": true,
+                  "regex": "^[a-zA-Z][a-zA-Z0-9-]{1,11}$",
+                  "validationMessage": "Must be no more than 12 characters, begin with a letter, and contain only letters, numbers and hyphens"
                 }
               },
               {
@@ -552,7 +579,7 @@
                 "type": "Microsoft.Common.TextBox",
                 "label": "Number of worker nodes",
                 "toolTip": "The number of worker nodes to be created",
-                "defaultValue": "2",
+                "defaultValue": "8",
                 "constraints": {
                   "required": true,
                   "regex": "^[1-9][0-9]{0,2}$",
@@ -565,12 +592,15 @@
                 "label": "Worker node VM Size",
                 "toolTip": "VM size for the worker nodes",
                 "recommendedSizes": [
-                  "Standard_D4_v3",
-                  "Standard_D3_v2",
-                  "Standard_D3",
-                  "Standard_F4",
-                  "Standard_A4_v2",
-                  "Standard_A3"
+                  "Standard_D8s_v3",
+                  "Standard_DS4_v2",
+                  "Standard_F8s",
+                  "Standard_D4s_v3",
+                  "Standard_DS3_v2",
+                  "Standard_H16r",
+                  "Standard_H8",
+                  "Standard_H16",
+                  "Standard_DS4"
                 ],
                 "constraints": {
                   "excludedSizes": [
@@ -590,8 +620,8 @@
                 "name": "workerNodeOsDiskType",
                 "type": "Microsoft.Common.DropDown",
                 "label": "OS disk type for worker nodes",
-                "defaultValue": "Standard HDD",
-                "toolTip": "Premium disks (SSD) are backed by solid state drives and offer consistent, low-latency performance. They provide the best balance between price and performance, and are ideal for I/O-intensive applications and production workloads. Standard disks (HDD) are backed by magnetic drives and are preferable for applications where data is accessed infrequently.",
+                "defaultValue": "Premium SSD",
+                "toolTip": "Premium SSD disks offer high-performance, low-latency disk support for I/O-intensive applications and production workloads. To use Premium SSD disks, you must choose VM Size with premium storage support. Standard SSD Disks are a cost effective storage option optimized for workloads that need consistent performance at lower IOPS levels. Use Standard HDD disks for Dev/Test scenarios and less critical workloads at lowest cost.",
                 "constraints": {
                   "allowedValues": [
                     {
@@ -615,7 +645,7 @@
                 "visible": "[and(not(contains(toLower(replace(string(steps('clusterSetting').clusterBasic.workerNodeVMSize), 'Standard_', '')), 's')), equals(steps('clusterSetting').clusterBasic.workerNodeOsDiskType, 'Premium_LRS'))]",
                 "options": {
                   "icon": "Error",
-                  "text": "The VM size for worker nodes does not support Premium disk."
+                  "text": "The VM size for worker nodes does not support Premium SSD disk."
                 }
               },
               {
@@ -643,38 +673,6 @@
             "visible": "[equals(steps('clusterSetting').createCluster, 'Yes')]"
           },
           {
-            "name": "clusterAdvanced",
-            "type": "Microsoft.Common.Section",
-            "label": "Advanced Settings",
-            "elements": [
-              {
-                "name": "headNodeName",
-                "type": "Microsoft.Common.TextBox",
-                "label": "Head node name",
-                "toolTip": "The virtual machine name for the head node",
-                "defaultValue": "master",
-                "constraints": {
-                  "required": true,
-                  "regex": "^[a-zA-Z][a-zA-Z0-9-]{1,11}$",
-                  "validationMessage": "Must be no more than 12 characters, begin with a letter, and contain only letters, numbers and hyphens"
-                }
-              },
-              {
-                "name": "workerNodeNamePrefix",
-                "type": "Microsoft.Common.TextBox",
-                "label": "worker node name prefix",
-                "toolTip": "The name prefix of the worker nodes. For example, if 'worker' is specified, the worker node names will be 'worker0', 'worker1', ...",
-                "defaultValue": "worker",
-                "constraints": {
-                  "required": true,
-                  "regex": "^[a-zA-Z][a-zA-Z0-9-]{1,11}$",
-                  "validationMessage": "Must be no more than 12 characters, begin with a letter, and contain only letters, numbers and hyphens"
-                }
-              }
-            ],
-            "visible": "[and(equals(steps('clusterSetting').createCluster, 'Yes'), equals(steps('clusterSetting').clusterBasic.setAdvanced, 'Yes'))]"
-          },
-          {
             "name": "dataDisks",
             "type": "Microsoft.Common.Section",
             "label": "Data Disks",
@@ -687,16 +685,47 @@
                   "text": "You can attach a number of data disks for head node and worker nodes.",
                   "link": {
                     "label": "Learn more",
-                    "uri": "https://azure.microsoft.com/en-us/pricing/details/managed-disks/"
+                    "uri": "https://go.microsoft.com/fwlink/?linkid=2058425"
                   }
                 }
               },
               {
-                "name": "dataDiskSize",
+                "name": "clusterFilesystem",
                 "type": "Microsoft.Common.DropDown",
-                "label": "Size of data disk(GB)",
+                "label": "Cluster File System",
+                "defaultValue": "None",
+                "toolTip": "Specify whether you want to create a cluster file system with BeeGFS (https://www.beegfs.io) across the HPC cluster nodes. If you choose 'BeeGFS', at least 2 data disks are required for each node; the head node will act as the management and metadata server, the worker nodes will act as the storage servers.",
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "None",
+                      "value": "None:None"
+                    },
+                    {
+                      "label": "BeeGFS",
+                      "value": "BeeGFS:Storage"
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "text1",
+                "type": "Microsoft.Common.TextBlock",
+                "visible": "[equals(coalesce(steps('clusterSetting').dataDisks.clusterFilesystem, ''), 'BeeGFS:Storage')]",
+                "options": {
+                  "text": "You shall specify at least 2 data disks for the head node and each worker node. The head node will act as Management and Metadata Server, the worker nodes will act as Storage Servers.",
+                  "link": {
+                    "label": "More about BeeGFS",
+                    "uri": "https://www.beegfs.io"
+                  }
+                }
+              },
+              {
+                "name": "headNodeDataDiskSize",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Size of head node data disk(GB)",
                 "defaultValue": "128",
-                "toolTip": "The size in GB for each data disk.",
+                "toolTip": "The size in GB for each data disk attached to the head node.",
                 "constraints": {
                   "allowedValues": [
                     {
@@ -739,7 +768,7 @@
                 "type": "Microsoft.Common.DropDown",
                 "label": "Data disk number for head node",
                 "defaultValue": "0",
-                "toolTip": "The number of data disks attached to the head node",
+                "toolTip": "The number of data disks attached to the head node. Do not specify a number which exceeds the maximum data disk number of the head node VM Size.",
                 "constraints": {
                   "allowedValues": [
                     {
@@ -757,6 +786,37 @@
                     {
                       "label": "4",
                       "value": 4
+                    },
+                    {
+                      "label": "8",
+                      "value": 8
+                    },
+                    {
+                      "label": "16",
+                      "value": 16
+                    }
+                  ]
+                }
+              },
+              {
+                "name": "headNodeDataDiskType",
+                "type": "Microsoft.Common.DropDown",
+                "label": "Data disk type for head node",
+                "defaultValue": "Premium SSD",
+                "toolTip": "Premium SSD disks offer high-performance, low-latency disk support for I/O-intensive applications and production workloads. To use Premium SSD disks, you must choose VM Size with premium storage support. Standard SSD Disks are a cost effective storage option optimized for workloads that need consistent performance at lower IOPS levels. Use Standard HDD disks for Dev/Test scenarios and less critical workloads at lowest cost.",
+                "constraints": {
+                  "allowedValues": [
+                    {
+                      "label": "Standard HDD",
+                      "value": "Standard_LRS"
+                    },
+                    {
+                      "label": "Standard SSD",
+                      "value": "StandardSSD_LRS"
+                    },
+                    {
+                      "label": "Premium SSD",
+                      "value": "Premium_LRS"
                     }
                   ]
                 }
@@ -767,28 +827,48 @@
                 "visible": "[and(not(contains(toLower(replace(coalesce(steps('clusterSetting').clusterBasic.headNodeVMSize, ''), 'Standard_', '')), 's')), equals(steps('clusterSetting').dataDisks.headNodeDataDiskType, 'Premium_LRS'))]",
                 "options": {
                   "icon": "Error",
-                  "text": "The VM size for head node does not support Premium disk."
+                  "text": "The VM size for head node does not support Premium SSD disk.."
                 }
               },
               {
-                "name": "headNodeDataDiskType",
+                "name": "workerNodeDataDiskSize",
                 "type": "Microsoft.Common.DropDown",
-                "label": "Data disk type for head node",
-                "defaultValue": "Standard HDD",
-                "toolTip": "Premium disks (SSD) are backed by solid state drives and offer consistent, low-latency performance. They provide the best balance between price and performance, and are ideal for I/O-intensive applications and production workloads. Standard disks (HDD) are backed by magnetic drives and are preferable for applications where data is accessed infrequently.",
+                "label": "Size of worker node data disk(GB)",
+                "defaultValue": "128",
+                "toolTip": "The size in GB for each data disk attached to worker nodes.",
                 "constraints": {
                   "allowedValues": [
                     {
-                      "label": "Standard HDD",
-                      "value": "Standard_LRS"
+                      "label": "32",
+                      "value": 32
                     },
                     {
-                      "label": "Standard SSD",
-                      "value": "StandardSSD_LRS"
+                      "label": "64",
+                      "value": 64
                     },
                     {
-                      "label": "Premium SSD",
-                      "value": "Premium_LRS"
+                      "label": "128",
+                      "value": 128
+                    },
+                    {
+                      "label": "256",
+                      "value": 256
+                    },
+                    {
+                      "label": "512",
+                      "value": 512
+                    },
+                    {
+                      "label": "1024",
+                      "value": 1024
+                    },
+                    {
+                      "label": "2048",
+                      "value": 2048
+                    },
+                    {
+                      "label": "4096",
+                      "value": 4096
                     }
                   ]
                 }
@@ -798,7 +878,7 @@
                 "type": "Microsoft.Common.DropDown",
                 "label": "Data disk number for worker node",
                 "defaultValue": "0",
-                "toolTip": "The number of data disks attached to each worker node",
+                "toolTip": "The number of data disks attached to each worker node. Do not specify a number which exceeds the maximum data disk number of the worker node VM Size.",
                 "constraints": {
                   "allowedValues": [
                     {
@@ -816,17 +896,16 @@
                     {
                       "label": "4",
                       "value": 4
+                    },
+                    {
+                      "label": "8",
+                      "value": 8
+                    },
+                    {
+                      "label": "16",
+                      "value": 16
                     }
                   ]
-                }
-              },
-              {
-                "name": "workerNodeDataDiskTypeWarning",
-                "type": "Microsoft.Common.InfoBox",
-                "visible": "[and(not(contains(toLower(replace(coalesce(steps('clusterSetting').clusterBasic.workerNodeVMSize, ''), 'Standard_', '')), 's')), equals(steps('clusterSetting').dataDisks.workerNodeDataDiskType, 'Premium_LRS'))]",
-                "options": {
-                  "icon": "Error",
-                  "text": "The VM size for head node does not support Premium disk."
                 }
               },
               {
@@ -834,7 +913,7 @@
                 "type": "Microsoft.Common.DropDown",
                 "label": "Data disk type for worker node",
                 "defaultValue": "Standard HDD",
-                "toolTip": "Premium disks (SSD) are backed by solid state drives and offer consistent, low-latency performance. They provide the best balance between price and performance, and are ideal for I/O-intensive applications and production workloads. Standard disks (HDD) are backed by magnetic drives and are preferable for applications where data is accessed infrequently.",
+                "toolTip": "Premium SSD disks offer high-performance, low-latency disk support for I/O-intensive applications and production workloads. To use Premium SSD disks, you must choose VM Size with premium storage support. Standard SSD Disks are a cost effective storage option optimized for workloads that need consistent performance at lower IOPS levels. Use Standard HDD disks for Dev/Test scenarios and less critical workloads at lowest cost.",
                 "constraints": {
                   "allowedValues": [
                     {
@@ -850,6 +929,15 @@
                       "value": "Premium_LRS"
                     }
                   ]
+                }
+              },
+              {
+                "name": "workerNodeDataDiskTypeWarning",
+                "type": "Microsoft.Common.InfoBox",
+                "visible": "[and(not(contains(toLower(replace(coalesce(steps('clusterSetting').clusterBasic.workerNodeVMSize, ''), 'Standard_', '')), 's')), equals(steps('clusterSetting').dataDisks.workerNodeDataDiskType, 'Premium_LRS'))]",
+                "options": {
+                  "icon": "Error",
+                  "text": "The VM size for worker nodes does not support Premium SSD disk."
                 }
               }
             ],
@@ -878,11 +966,11 @@
       "dashboardCpuCores": "[steps('portalSetting').backend.acmBackendCpuCores.dashBoard]",
       "dashboardMemoryInGb": "[steps('portalSetting').backend.acmBackendMemory.jobMonitor]",
       "scheduler": "[steps('clusterSetting').clusterBasic.schedulerType]",
-      "adminUserName": "[steps('clusterSetting').clusterBasic.adminUsername]",
+      "adminUserName": "[steps('clusterSetting').clusterBasic.adminUserName]",
       "adminPassword": "[steps('clusterSetting').clusterBasic.adminPassword.password]",
       "adminSshPublicKey": "[steps('clusterSetting').clusterBasic.adminPassword.sshPublicKey]",
       "hpcNodeImage": "[coalesce(steps('clusterSetting').clusterBasic.otherClusterNodeImage, steps('clusterSetting').clusterBasic.clusterNodeImage)]",
-      "headNodeName": "[steps('clusterSetting').clusterAdvanced.headNodeName]",
+      "headNodeName": "[steps('clusterSetting').clusterBasic.headNodeName]",
       "headNodeSize": "[steps('clusterSetting').clusterBasic.headNodeVMSize]",
       "headNodeOsDiskType": "[steps('clusterSetting').clusterBasic.headNodeOsDiskType]",
       "publicIPCreateOption": "[steps('clusterSetting').clusterBasic.headNodePublicIP.newOrExistingOrNone]",
@@ -891,15 +979,17 @@
       "publicIPSku": "[steps('clusterSetting').clusterBasic.headNodePublicIP.sku]",
       "publicIPDNSNameLabel": "[steps('clusterSetting').clusterBasic.headNodePublicIP.domainNameLabel]",
       "publicIPAllocationMethod": "[steps('clusterSetting').clusterBasic.headNodePublicIP.publicIPAllocationMethod]",
-      "headNodeDataDiskType": "[steps('clusterSetting').dataDisks.headNodeDataDiskType]",
-      "workerNodeNamePrefix": "[steps('clusterSetting').clusterAdvanced.workerNodeNamePrefix]",
+      "workerNodeNamePrefix": "[steps('clusterSetting').clusterBasic.workerNodeNamePrefix]",
       "workerNodeSize": "[steps('clusterSetting').clusterBasic.workerNodeVMSize]",
       "workerNodeCount": "[int(coalesce(steps('clusterSetting').clusterBasic.workerNodeCount, '1'))]",
+      "workerNodeOsDiskType": "[steps('clusterSetting').clusterBasic.workerNodeOsDiskType]",
+      "clusterFilesystem": "[steps('clusterSetting').dataDisks.clusterFilesystem]",
+      "headNodeDataDiskSize": "[steps('clusterSetting').dataDisks.headNodeDataDiskSize]",
+      "headNodeDataDiskType": "[steps('clusterSetting').dataDisks.headNodeDataDiskType]",
       "headNodeDataDiskCount": "[steps('clusterSetting').dataDisks.headNodeDataDiskCount]",
+      "workerNodeDataDiskSize": "[steps('clusterSetting').dataDisks.workerNodeDataDiskSize]",
       "workerNodeDataDiskCount": "[steps('clusterSetting').dataDisks.workerNodeDataDiskCount]",
-      "workerNodeOsDiskType": "[steps('clusterSetting').clusterBasic.headNodeOsDiskType]",
       "workerNodeDataDiskType": "[steps('clusterSetting').dataDisks.workerNodeDataDiskType]",
-      "dataDiskSize": "[steps('clusterSetting').dataDisks.dataDiskSize]",
       "location": "[location()]"
     }
   }

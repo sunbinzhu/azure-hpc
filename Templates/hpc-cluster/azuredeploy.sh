@@ -136,7 +136,7 @@ EOF
         createdPartitions="$createdPartitions /dev/${disk}1"
     done
     
-    sleep 30
+    sleep 15
     
     if [[ "$DATADISK_COUNT" == "1" ]]; then
         devName=/dev/$(ls /dev/ | egrep '^sd([c-z]|[a-z]{2,})1$')
@@ -144,6 +144,7 @@ EOF
         # Create RAID-0 volume
         devName=/dev/md10
         mdadm --create $devName --level 0 --raid-devices $DATADISK_COUNT $createdPartitions
+        sleep 10
     fi
     
     mkfs -t $filesystem $devName
