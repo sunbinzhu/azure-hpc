@@ -328,7 +328,7 @@
     "adminPublicKeys": "[if(empty(parameters('adminSshPublicKey')), variables('emptyArray'), array(variables('adminSshSetting')))]",
     "allPublicKeys": "[if(empty(parameters('hpcUserSshPublicKey')), variables('adminPublicKeys'), concat(variables('adminPublicKeys'), array(variables('hpcUserSshSetting'))))]",
     "workerNodeNicNamePrefix": "[concat('nic-', parameters('workerNodeNamePrefix'))]",
-    "adjustedClusterFilesystem": "[if(or(equals(parameters('headNodeDataDiskCount'), 0), equals(parameters('workerNodeDataDiskCount'), 0)), '', parameters('clusterFilesystem'))]",
+    "adjustedClusterFilesystem": "[if(or(equals(parameters('headNodeDataDiskCount'), 0), equals(parameters('workerNodeDataDiskCount'), 0)), 'None:None', parameters('clusterFilesystem'))]",
     "clusterFilesystem": "[split(variables('adjustedClusterFilesystem'), ':')[0]]",
     "clusterFilesystemStorageLocation": "[split(variables('adjustedClusterFilesystem'), ':')[1]]",
     "schedulerName": "[split(parameters('scheduler'), '_')[0]]",
