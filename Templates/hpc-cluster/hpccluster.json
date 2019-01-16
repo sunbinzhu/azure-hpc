@@ -237,6 +237,32 @@
         "description": "The IP allocation method for the public IP address"
       }
     },
+    "headNodeWithAcceleratedNetworking": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Specify whether to create the head node with accelerated networking"
+      }
+    },
+    "workerNodeWithAcceleratedNetworking": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Specify whether to create the worker nodes with accelerated networking"
+      }
+    },
+    "availabilitySetOption": {
+      "type": "string",
+      "defaultValue": "All",
+      "allowedValues": [
+        "None",
+        "WorkerNodes",
+        "AllNodes"
+      ],
+      "metadata": {
+        "description": "Specify whether to create the Azure VMs in an availability Set"
+      }
+    },
     "scriptBaseLocation": {
       "type": "string",
       "metadata": {
@@ -264,7 +290,10 @@
     "publicIPDnsSettings": {
       "domainNameLabel": "[parameters('publicIPDNSNameLabel')]"
     },
-    "avSetName": "[concat(parameters('headNodeName'), '-avSet')]",
+    "availabilitySetName": "[concat(parameters('headNodeName'), '-avset')]",
+    "availabilitySetSetting": {
+      "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('availabilitySetName'))]"
+    },
     "networkSettings": {
       "virtualNetworkName": "[concat(parameters('headNodeName'), '-VNet')]",
       "addressPrefix": "10.0.0.0/16",
@@ -371,11 +400,12 @@
       }
     },
     {
+      "condition": "[not(equals(parameters('availabilitySetOption'), 'None'))]",
       "type": "Microsoft.Compute/availabilitySets",
       "sku": {
         "name": "Aligned"
       },
-      "name": "[variables('avSetName')]",
+      "name": "[variables('availabilitySetName')]",
       "apiVersion": "2018-10-01",
       "location": "[parameters('location')]",
       "properties": {
@@ -442,6 +472,7 @@
             }
           }
         ],
+        "enableAcceleratedNetworking": "[parameters('headNodeWithAcceleratedNetworking')]",
         "networkSecurityGroup": {
           "id": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]"
         }
@@ -464,9 +495,7 @@
         "StorageConfiguration": "[concat('{\"AccountName\":\"', parameters('acmStorageAccountName'), '\" }')]"
       },
       "properties": {
-        "availabilitySet": {
-          "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('avSetName'))]"
-        },
+        "availabilitySet": "[if(equals(parameters('availabilitySetOption'), 'AllNodes'), variables('availabilitySetSetting'), json('null'))]",
         "hardwareProfile": {
           "vmSize": "[parameters('headNodeSize')]"
         },
@@ -501,7 +530,7 @@
       },
       "dependsOn": [
         "[concat('Microsoft.Network/networkInterfaces/', variables('headNodeNicName'))]",
-        "[concat('Microsoft.Compute/availabilitySets/', variables('avSetName'))]"
+        "[concat('Microsoft.Compute/availabilitySets/', variables('availabilitySetName'))]"
       ]
     },
     {
@@ -602,7 +631,8 @@
               }
             }
           }
-        ]
+        ],
+        "enableAcceleratedNetworking": "[parameters('workerNodeWithAcceleratedNetworking')]"
       },
       "dependsOn": [
         "[concat('Microsoft.Network/virtualNetworks/', variables('networkSettings').virtualNetworkName)]"
@@ -654,9 +684,7 @@
         "StorageConfiguration": "[concat('{\"AccountName\":\"', parameters('acmStorageAccountName'), '\" }')]"
       },
       "properties": {
-        "availabilitySet": {
-          "id": "[resourceId('Microsoft.Compute/availabilitySets', variables('avSetName'))]"
-        },
+        "availabilitySet": "[if(equals(parameters('availabilitySetOption'), 'None'), json('null'), variables('availabilitySetSetting'))]",
         "hardwareProfile": {
           "vmSize": "[parameters('workerNodeSize')]"
         },
@@ -691,7 +719,7 @@
       },
       "dependsOn": [
         "[concat('Microsoft.Network/networkInterfaces/', variables('workerNodeNicNamePrefix'), copyindex())]",
-        "[concat('Microsoft.Compute/availabilitySets/', variables('avSetName'))]"
+        "[concat('Microsoft.Compute/availabilitySets/', variables('availabilitySetName'))]"
       ]
     }
   ]

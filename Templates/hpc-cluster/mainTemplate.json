@@ -397,6 +397,32 @@
         "description": "The IP allocation method for the public IP address"
       }
     },
+    "availabilitySetOption": {
+      "type": "string",
+      "defaultValue": "All",
+      "allowedValues": [
+        "None",
+        "WorkerNodes",
+        "AllNodes"
+      ],
+      "metadata": {
+        "description": "Specify what hpc nodes will be created in an availability Set"
+      }
+    },
+    "headNodeWithAcceleratedNetworking": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Specify whether to create the head node with accelerated networking"
+      }
+    },
+    "workerNodeWithAcceleratedNetworking": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Specify whether to create the worker nodes with accelerated networking"
+      }
+    },
     "location": {
       "defaultValue": "[resourceGroup().location]",
       "type": "string",
@@ -421,13 +447,14 @@
     }
   },
   "variables": {
+    "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), concat('hpcacm', uniqueString(resourceGroup().id, 'portal')), tolower(parameters('portalDnsNameLabel')))]",
     "servicePlanSkuName": "[split(trim(parameters('appServicePlanPricingTier')), ' ')[0]]",
     "servicePlanSkuTier": "[split(trim(parameters('appServicePlanPricingTier')), ' ')[1]]",
-    "storageAccountName": "[if(empty(parameters('storageAccountName')), uniqueString(resourceGroup().id, 'storage'), tolower(parameters('storageAccountName')))]",
-    "frontendServicePlanName": "[if(empty(parameters('appServicePlanName')), concat('HpcAcmSP-', uniqueString(resourceGroup().id, 'portal')), parameters('appServicePlanName'))]",
+    "storageAccountName": "[if(empty(parameters('storageAccountName')), concat('hpcacm', uniqueString(resourceGroup().id, 'storage')), tolower(parameters('storageAccountName')))]",
+    "frontendServicePlanName": "[if(empty(parameters('appServicePlanName')), concat(variables('portalDnsNameLabel'), '-sp'), parameters('appServicePlanName'))]",
     "aadAuthIssuer": "[concat('https://sts.windows.net/', if(empty(parameters('aadTenantId')), subscription().tenantId, parameters('aadTenantId')), '/')]",
     "storageAccountId": "[resourceId(parameters('storageAccountResourceGroup'), 'Microsoft.Storage/storageAccounts', variables('storageAccountName'))]",
-    "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), concat('hpcacm', uniqueString(resourceGroup().id, 'portal')), tolower(parameters('portalDnsNameLabel')))]",
+    "backendGroupName": "[if(empty(parameters('backendGroupName')), concat(variables('portalDnsNameLabel'), '-backend'), tolower(parameters('backendGroupName')))]",
     "rdmaDriverInstalled": "[contains(parameters('hpcNodeImage'), ':RDMA')]",
     "hpcNodeImageParts": "[split(replace(parameters('hpcNodeImage'), ':RDMA', ''), '/')]",
     "appendedHpcNodeImageParts": "[concat(variables('hpcNodeImageParts'), array('user'))]",
@@ -541,7 +568,7 @@
     },
     {
       "type": "Microsoft.ContainerInstance/containerGroups",
-      "name": "[parameters('backendGroupName')]",
+      "name": "[variables('backendGroupName')]",
       "apiVersion": "2018-10-01",
       "location": "[parameters('location')]",
       "properties": {
@@ -727,6 +754,15 @@
           },
           "publicIPAllocationMethod": {
             "value": "[parameters('publicIPAllocationMethod')]"
+          },
+          "headNodeWithAcceleratedNetworking": {
+            "value": "[parameters('headNodeWithAcceleratedNetworking')]"
+          },
+          "workerNodeWithAcceleratedNetworking": {
+            "value": "[parameters('workerNodeWithAcceleratedNetworking')]"
+          },
+          "availabilitySetOption": {
+            "value": "[parameters('availabilitySetOption')]"
           },
           "scriptBaseLocation": {
             "value": "[variables('artifactsLocation')]"
