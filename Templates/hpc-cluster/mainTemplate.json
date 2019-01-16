@@ -399,7 +399,7 @@
     },
     "availabilitySetOption": {
       "type": "string",
-      "defaultValue": "All",
+      "defaultValue": "AllNodes",
       "allowedValues": [
         "None",
         "WorkerNodes",
