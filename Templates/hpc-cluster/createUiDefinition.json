@@ -258,7 +258,7 @@
               ]
             },
             "options": {
-              "hideExisting": false
+              "hideExisting": true
             },
             "visible": true
           }
@@ -266,12 +266,12 @@
       },
       {
         "name": "clusterSetting",
-        "label": "HPC Cluster settings",
+        "label": "HPC Cluster Settings",
         "subLabel": {
           "preValidation": "Configure HPC Cluster",
           "postValidation": "Done"
         },
-        "bladeTitle": "HPC Cluster settings",
+        "bladeTitle": "HPC Cluster Settings",
         "elements": [
           {
             "name": "hpcClusterText",
@@ -450,12 +450,12 @@
                 "name": "headNodePublicIP",
                 "type": "Microsoft.Network.PublicIpAddressCombo",
                 "label": {
-                  "publicIpAddress": "Public IP address for head node",
+                  "publicIpAddress": "Head node public IP address",
                   "domainNameLabel": "DNS name label for head node"
                 },
                 "toolTip": {
                   "publicIpAddress": "The public IP address for the head node.",
-                  "domainNameLabel": "If specified, an \"A record\" that starts with the specified label and resolves to the public IP address for the head node will be registered with the Azure-provided DNS servers. Example: mylabel.westus.cloudapp.azure.com."
+                  "domainNameLabel": "If specified, an \"A record\" that starts with the specified label and resolves to the public IP address for the head node will be registered with the Azure-provided DNS servers."
                 },
                 "defaultValue": {
                   "publicIpAddressName": "[concat('hpcpubip', string(rand(1, 999999999)))]"
@@ -480,8 +480,8 @@
               {
                 "name": "headNodeVMSize",
                 "type": "Microsoft.Compute.SizeSelector",
-                "label": "Head node VM Size",
-                "toolTip": "VM Size for the head node",
+                "label": "Head node VM size",
+                "toolTip": "VM size for the head node",
                 "recommendedSizes": [
                   "Standard_D8s_v3",
                   "Standard_DS4_v2",
@@ -589,7 +589,7 @@
               {
                 "name": "workerNodeVMSize",
                 "type": "Microsoft.Compute.SizeSelector",
-                "label": "Worker node VM Size",
+                "label": "Worker node VM size",
                 "toolTip": "VM size for the worker nodes",
                 "recommendedSizes": [
                   "Standard_D8s_v3",
