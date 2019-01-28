@@ -276,8 +276,14 @@
         "description": "The sasToken required to access _artifactsLocation."
       }
     },
+    "guidPool": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "An array of Guids separated with ';', the number of Guids no less than the number of cluster nodes. If not specified, Guids will be auto-generated."
+      }
+    },
     "location": {
-      "defaultValue": "[resourceGroup().location]",
       "type": "string",
       "metadata": {
         "description": "Location for all resources."
@@ -285,6 +291,18 @@
     }
   },
   "variables": {
+    "emptyArray": [],
+    "inputGuids": "[if(empty(parameters('guidPool')), variables('emptyArray'), split(parameters('guidPool'), ';'))]",
+    "autoGenGuids": {
+      "copy": [
+        {
+          "name": "guids",
+          "count": "[add(1, parameters('workerNodeCount'))]",
+          "input": "[guid(resourceGroup().id, concat(parameters('workerNodeNamePrefix'), copyindex()), parameters('acmStorageAccountName'))]"
+        }
+      ]
+    },
+    "guidArray": "[concat(variables('inputGuids'), variables('autoGenGuids').guids)]",
     "nsgName": "[concat(parameters('headNodeName'), '-nsg')]",
     "publicIPAddressName": "[if(empty(parameters('publicIPName')), concat(parameters('headNodeName'), '-publicip'), parameters('publicIPName'))]",
     "publicIPDnsSettings": {
@@ -313,7 +331,6 @@
       }
     },
     "headNodeNicName": "[concat('nic-', parameters('headNodeName'))]",
-    "emptyArray": [],
     "headNodeDataDisks": {
       "copy": [
         {
@@ -640,7 +657,7 @@
     },
     {
       "type": "Microsoft.Authorization/roleAssignments",
-      "name": "[guid(resourceGroup().id, parameters('headNodeName'), parameters('acmStorageAccountName'))]",
+      "name": "[variables('guidArray')[0]]",
       "apiVersion": "2017-09-01",
       "properties": {
         "roleDefinitionId": "/providers/Microsoft.Authorization/roleDefinitions/17d1049b-9a84-46fb-8f53-869881c3d3ab",
@@ -653,7 +670,7 @@
     },
     {
       "type": "Microsoft.Authorization/roleAssignments",
-      "name": "[guid(resourceGroup().id, concat(parameters('workerNodeNamePrefix'), copyindex()), parameters('acmStorageAccountName'))]",
+      "name": "[variables('guidArray')[copyIndex(1)]]",
       "apiVersion": "2017-09-01",
       "copy": {
         "name": "workerRoleAssignment",

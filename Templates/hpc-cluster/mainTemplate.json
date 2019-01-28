@@ -423,6 +423,13 @@
         "description": "Specify whether to create the worker nodes with accelerated networking"
       }
     },
+    "guidPool": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "An array of Guids separated with ';', the number of Guids no less than the number of cluster nodes. If not specified, Guids will be auto-generated."
+      }
+    },
     "location": {
       "defaultValue": "[resourceGroup().location]",
       "type": "string",
@@ -769,6 +776,9 @@
           },
           "scriptBaseLocationSasToken": {
             "value": "[parameters('_artifactsLocationSasToken')]"
+          },
+          "guidPool": {
+            "value": "[parameters('guidPool')]"
           },
           "location": {
             "value": "[parameters('location')]"
