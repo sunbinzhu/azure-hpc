@@ -261,14 +261,22 @@ build_slurm()
     if [[ "$SLURM_RELEASE" > "17.02" ]]; then
         wget https://download.schedmd.com/slurm/slurm-$SLURM_VERSION.tar.bz2
         if [ $? -ne 0 ]; then
-            wget https://github.com/SchedMD/slurm/archive/slurm-$SLURM_GITVERSION.tar.gz
+            wget --retry-connrefused --waitretry=20 https://github.com/SchedMD/slurm/archive/slurm-$SLURM_GITVERSION.tar.gz
+            if [ $? -ne 0 ]; then
+                echo "Failed to download Slurm"
+                exit 1
+            fi
             tar xvfz slurm-$SLURM_GITVERSION.tar.gz
             mv slurm-slurm-$SLURM_GITVERSION slurm-$SLURM_VERSION
             tar -cvjSf slurm-$SLURM_VERSION.tar.bz2 slurm-$SLURM_VERSION
         fi
         rpmbuild -ta slurm-$SLURM_VERSION.tar.bz2
     else
-        wget https://github.com/SchedMD/slurm/archive/slurm-$SLURM_GITVERSION.tar.gz
+        wget --retry-connrefused --waitretry=20 https://github.com/SchedMD/slurm/archive/slurm-$SLURM_GITVERSION.tar.gz
+        if [ $? -ne 0 ]; then
+            echo "Failed to download Slurm"
+            exit 1
+        fi
         tar xvfz slurm-$SLURM_GITVERSION.tar.gz
         mv slurm-slurm-$SLURM_GITVERSION slurm-$SCHEDULERVER
         sed -i "s/^Name:\s*see META file/Name:     slurm/" slurm-$SCHEDULERVER/slurm.spec
@@ -341,11 +349,19 @@ install_pbspro()
     if [[ "$SCHEDULERVER" == "14.1.0" ]]; then
         # Required on 7.2 as the libical lib changed
         ln -s /usr/lib64/libical.so.1 /usr/lib64/libical.so.0
-        wget http://wpc.23a7.iotacdn.net/8023A7/origin2/rl/PBS-Open/CentOS_7.zip
+        wget --retry-connrefused --waitretry=20 http://wpc.23a7.iotacdn.net/8023A7/origin2/rl/PBS-Open/CentOS_7.zip
+        if [ $? -ne 0 ]; then
+            echo "Failed to download Pbspro $SCHEDULERVER"
+            exit 1
+        fi
         unzip CentOS_7.zip
         rpm -ivh --nodeps CentOS_7/pbspro-server-14.1.0-13.1.x86_64.rpm
     else
-        wget https://github.com/PBSPro/pbspro/releases/download/v18.1.3/pbspro_$SCHEDULERVER.centos7.zip
+        wget --retry-connrefused --waitretry=20 https://github.com/PBSPro/pbspro/releases/download/v18.1.3/pbspro_$SCHEDULERVER.centos7.zip
+        if [ $? -ne 0 ]; then
+            echo "Failed to download Pbspro $SCHEDULERVER"
+            exit 1
+        fi
         unzip pbspro_$SCHEDULERVER.centos7.zip
         yum install -y pbspro_$SCHEDULERVER.centos7/pbspro-server-${SCHEDULERVER}-0.x86_64.rpm
     fi
@@ -511,8 +527,13 @@ install_cfs()
     fi
     
     if [ "$CFS" == "BeeGFS" ]; then
-        wget -O beegfs-rhel7.repo http://www.beegfs.com/release/latest-stable/dists/beegfs-rhel7.repo
-        mv beegfs-rhel7.repo /etc/yum.repos.d/beegfs.repo
+        wget --retry-connrefused --waitretry=20 -O beegfs-rhel7.repo http://www.beegfs.com/release/latest-stable/dists/beegfs-rhel7.repo
+        if [ $? -ne 0 ]; then
+            echo "Failed to download beegfs-rhel7.repo"
+        else
+            mv beegfs-rhel7.repo /etc/yum.repos.d/beegfs.repo
+        fi
+        
         rpm --import http://www.beegfs.com/release/latest-stable/gpg/RPM-GPG-KEY-beegfs
 
         yum install -y beegfs-client beegfs-helperd beegfs-utils
