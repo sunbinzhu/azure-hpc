@@ -179,6 +179,27 @@
         "description": "The amount of memory in GB to allocate to the dashboard container instance."
       }
     },
+    "dockerRegistryServer": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "Docker registry server without protocol (http or https), must specified togerther with 'dockerRegistryUsername' and 'dockerRegistryPassword'"
+      }
+    },
+    "dockerRegistryUsername": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Docker registry user name."
+      }
+    },
+    "dockerRegistryPassword": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Docker registry user password."
+      }
+    },
     "scheduler": {
       "defaultValue": "None",
       "type": "string",
@@ -454,6 +475,7 @@
     }
   },
   "variables": {
+    "emptyArray": [],
     "portalDnsNameLabel": "[if(empty(parameters('portalDnsNameLabel')), concat('hpcacm', uniqueString(resourceGroup().id, 'portal')), tolower(parameters('portalDnsNameLabel')))]",
     "servicePlanSkuName": "[split(trim(parameters('appServicePlanPricingTier')), ' ')[0]]",
     "servicePlanSkuTier": "[split(trim(parameters('appServicePlanPricingTier')), ' ')[1]]",
@@ -475,6 +497,48 @@
       "id": "[resourceId(variables('hpcNodeImageParts')[0], 'Microsoft.Compute/images', variables('hpcNodeImageParts')[1])]"
     },
     "hpcNodeImageRef": "[if(equals(length(variables('hpcNodeImageParts')), 3), variables('publicHpcNodeImage'), variables('privateHpcNodeImage'))]",
+    "dockerImageRegistryCredentials": [
+      {
+        "server": "[parameters('dockerRegistryServer')]",
+        "username": "[parameters('dockerRegistryUsername')]",
+        "password": "[parameters('dockerRegistryPassword')]"
+      },
+      {
+        "server": "[parameters('dockerRegistryServer')]",
+        "username": "[parameters('dockerRegistryUsername')]",
+        "password": "[parameters('dockerRegistryPassword')]"
+      },
+      {
+        "server": "[parameters('dockerRegistryServer')]",
+        "username": "[parameters('dockerRegistryUsername')]",
+        "password": "[parameters('dockerRegistryPassword')]"
+      }
+    ],
+    "webAppDockerImageRegistrySettings": [
+      {
+        "name": "DOCKER_REGISTRY_SERVER_URL",
+        "value": "[concat('https://', parameters('dockerRegistryServer'))]"
+      },
+      {
+        "name": "DOCKER_REGISTRY_SERVER_USERNAME",
+        "value": "[parameters('dockerRegistryUsername')]"
+      },
+      {
+        "name": "DOCKER_REGISTRY_SERVER_PASSWORD",
+        "value": "[parameters('dockerRegistryPassword')]"
+      }
+    ],
+    "basicWebAppSettings": [
+      {
+        "name": "CloudOptions__Storage__AccountName",
+        "value": "[variables('storageAccountName')]"
+      },
+      {
+        "name": "WEBSITES_PORT",
+        "value": "5000"
+      }
+    ],
+    "webAppSettings": "[if(or(or(empty(parameters('dockerRegistryServer')), empty(parameters('dockerRegistryUsername'))), empty(parameters('dockerRegistryPassword'))), variables('basicWebAppSettings'), concat(variables('basicWebAppSettings'), variables('webAppDockerImageRegistrySettings')))]",
     "artifactsLocation": "[if(endsWith(parameters('_artifactsLocation'), '/'), parameters('_artifactsLocation'), concat(parameters('_artifactsLocation'), '/'))]"
   },
   "resources": [
@@ -528,16 +592,7 @@
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('frontendServicePlanName'))]",
         "reserved": true,
         "siteConfig": {
-          "appSettings": [
-            {
-              "name": "CloudOptions__Storage__AccountName",
-              "value": "[variables('storageAccountName')]"
-            },
-            {
-              "name": "WEBSITES_PORT",
-              "value": "5000"
-            }
-          ],
+          "appSettings": "[variables('webAppSettings')]",
           "connectionStrings": [
             {
               "name": "CloudOptions__Storage__KeyValue",
@@ -650,6 +705,7 @@
             }
           }
         ],
+        "imageRegistryCredentials": "[if(or(or(empty(parameters('dockerRegistryServer')), empty(parameters('dockerRegistryUsername'))), empty(parameters('dockerRegistryPassword'))), variables('emptyArray'), variables('dockerImageRegistryCredentials'))]",
         "osType": "Linux",
         "restartPolicy": "OnFailure"
       },

@@ -159,6 +159,27 @@
         "description": "Resource group in which the storage account locates"
       }
     },
+    "dockerRegistryServer": {
+      "defaultValue": "",
+      "type": "string",
+      "metadata": {
+        "description": "Docker registry server without protocol (http or https), must specified togerther with 'dockerRegistryUsername' and 'dockerRegistryPassword'"
+      }
+    },
+    "dockerRegistryUsername": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Docker registry user name."
+      }
+    },
+    "dockerRegistryPassword": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Docker registry user password."
+      }
+    },
     "scheduler": {
       "defaultValue": "Slurm_18.08",
       "allowedValues": [
@@ -585,6 +606,15 @@
           },
           "newOrExistingStorageAccount": {
             "value": "[parameters('newOrExistingStorageAccount')]"
+          },
+          "dockerRegistryServer": {
+            "value": "[parameters('dockerRegistryServer')]"
+          },
+          "dockerRegistryUsername": {
+            "value": "[parameters('dockerRegistryUsername')]"
+          },
+          "dockerRegistryPassword": {
+            "value": "[parameters('dockerRegistryPassword')]"
           },
           "scheduler": {
             "value": "[variables('schedulers')[parameters('scheduler')]]"
