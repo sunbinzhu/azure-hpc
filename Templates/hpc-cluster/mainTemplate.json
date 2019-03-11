@@ -502,16 +502,6 @@
         "server": "[parameters('dockerRegistryServer')]",
         "username": "[parameters('dockerRegistryUsername')]",
         "password": "[parameters('dockerRegistryPassword')]"
-      },
-      {
-        "server": "[parameters('dockerRegistryServer')]",
-        "username": "[parameters('dockerRegistryUsername')]",
-        "password": "[parameters('dockerRegistryPassword')]"
-      },
-      {
-        "server": "[parameters('dockerRegistryServer')]",
-        "username": "[parameters('dockerRegistryUsername')]",
-        "password": "[parameters('dockerRegistryPassword')]"
       }
     ],
     "webAppDockerImageRegistrySettings": [
